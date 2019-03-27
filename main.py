@@ -24,6 +24,7 @@ import logging
 import os
 import random
 import time
+from pathlib import Path
 
 import numpy as np
 import tensorflow as tf
@@ -87,7 +88,7 @@ def main():
 
     # Saving
     logging.info('Saving model')
-    model.save('./saved_models/{env_name}-{algo}-{policy_type}'.format(**cfg))
+    model.save(str(Path(cfg['model_save_dir']).expanduser() / '{env_name}-{algo}-{policy_type}'.format(**cfg)))
 
     # Displaying gameplay
     obs = env.reset()
