@@ -1,24 +1,3 @@
-"""
-
-Instructions
-
-To use the launcher, just run main.py.
-
-It will ask you for a choice of model and how long to train it for.
-
-Other important parameters like the Atari environment can be edited near the top under the parameters section.
-To add a new model architecture, it would be easiest if you added it to the FUNC_DICT so that it can be called like the
-baseline architectures. Be warned that the stable_baselines functions come with lots of built-in functions so you might
-want to start by copying one of those in their entirety. We should probably delete everything not necessary for our
-purposes for clarity.
-
-The complete trained model is stored in stored models as env_name-model_name-policy_type.pkl
-
-These can then be loaded easily. Saving the metrics had a bug so I've cut that out and will sort it out soon, but since
-the full model is saved this isn't super urgent.
-
-"""
-
 import json
 import logging
 import os
