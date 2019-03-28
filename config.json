@@ -1,0 +1,9 @@
+{
+  "env_name": "PongNoFrameskip-v4",
+  "time_steps": 1000,
+  "policy_type": "CnnPolicy",
+  "algo": "a2c",
+  "train_time": 0,
+  "train_seed": 0,
+  "model_save_dir": "saved_models"
+}
