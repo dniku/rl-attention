@@ -2,6 +2,13 @@
 
 ### Instructions
 
+To use the launcher, run in the cloned repository:
+```bash
+python -m venv .env
+source .env/bin/activate
+pip install -r requirements.txt
+```
+
 To use the launcher, just run `main.py`. All parameters are stored in `config.json`.
 
 Adding a new model architecture is essentially replacing a `Policy`. Currently `config.json` specifies a `CnnPolicy`
