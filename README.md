@@ -21,3 +21,13 @@ The complete trained model is stored in stored under `saved_models` as `env_name
 
 These can then be loaded easily. Saving the metrics had a bug so I've cut that out and will sort it out soon, but since
 the full model is saved this isn't super urgent.
+
+### Jupyter instructions
+
+In the virtual environment set up above ...
+
+```bash
+pip install jupyter
+ipython kernel install --user --name=.env
+jupyter notebook
+```
