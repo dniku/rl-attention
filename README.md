@@ -21,3 +21,19 @@ The complete trained model is stored in stored under `saved_models` as `env_name
 
 These can then be loaded easily. Saving the metrics had a bug so I've cut that out and will sort it out soon, but since
 the full model is saved this isn't super urgent.
+
+### Jupyter instructions
+
+To install Jupyter, register a new kernel, and start a notebook, run in the virtual environment:
+```bash
+pip install jupyter
+ipython kernel install --user --name=.env
+jupyter notebook
+```
+Then activate the `.env` kernel in the notebook.
+
+To make the logging work, add and execute after importing the `logging` module in the notebook:
+```python
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+```
