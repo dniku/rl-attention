@@ -1,10 +1,9 @@
 import json
 import logging
 import os
-import random
 from pathlib import Path
+
 import matplotlib.pyplot as plt
-import numpy as np
 import tensorflow as tf
 from stable_baselines.common import set_global_seeds
 from stable_baselines.common.cmd_util import make_atari_env
@@ -48,13 +47,12 @@ def main():
         xs = old_fn(self, *args, **kwargs)
         mb_values.append(xs[1])  # This is the reward as given by the
         return xs
+
     env.step = new_fn
 
     # Setting all known random seeds
-    random.seed(cfg['train_seed'])
-    np.random.seed(cfg['train_seed'])
+    # (sets seeds in Python, Numpy, TF, Gym if available)
     set_global_seeds(cfg['train_seed'])
-    tf.random.set_random_seed(cfg['train_seed'])
 
     logging.info('Running {algo}'.format(**cfg))
     model = FUNC_DICT[cfg['algo']](policy=cfg['policy_type'], env=env)
