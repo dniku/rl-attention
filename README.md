@@ -24,10 +24,15 @@ the full model is saved this isn't super urgent.
 
 ### Jupyter instructions
 
-In the virtual environment set up above ...
-
+To install Jupyter, register a new kernel, and start a notebook, run in the virtual environment:
 ```bash
 pip install jupyter
 ipython kernel install --user --name=.env
 jupyter notebook
+```
+
+To make the logging work within the notebook, add and execute after importing the `logging` module in the notebook:
+```python
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 ```
