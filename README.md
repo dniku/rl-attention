@@ -30,8 +30,9 @@ pip install jupyter
 ipython kernel install --user --name=.env
 jupyter notebook
 ```
+Then activate the `.env` kernel in the notebook.
 
-To make the logging work within the notebook, add and execute after importing the `logging` module in the notebook:
+To make the logging work, add and execute after importing the `logging` module in the notebook:
 ```python
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
