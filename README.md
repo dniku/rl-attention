@@ -18,9 +18,7 @@ custom policies.
 We also include a copy of the code for training algorithms here so that it can be modified more easily.
 
 The complete trained model is stored in stored under `saved_models` as `env_name-model_name-policy_type.pkl`.
-
-These can then be loaded easily. Saving the metrics had a bug so I've cut that out and will sort it out soon, but since
-the full model is saved this isn't super urgent.
+The config file and 100-step reward averages are stored under `saved_metrics` as `env_name-model_name-policy_type.txt`.
 
 ### Jupyter instructions
 
