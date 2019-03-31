@@ -80,11 +80,15 @@ def main():
 
     # Saving
     logging.info('Saving model and metrics')
-    model.save(str(Path(cfg['model_save_dir']).expanduser() / '{env_name}-{algo}-{policy_type}'.format(**cfg)))
-    f = open(str(Path(cfg['metric_save_dir']).expanduser() / '{env_name}-{algo}-{policy_type}.txt'.format(**cfg)), "w+")
-    f.write('%s\n' % json.dumps(cfg))
-    f.write(', '.join(str(x[0]) for x in mb_averages))
-    f.close()
+
+    save_dir = Path(cfg['model_save_dir']).expanduser()
+
+    base_name = '{env_name}-{algo}-{policy_type}'.format(**cfg)
+    model.save(str(save_dir / base_name))
+
+    with (save_dir / (base_name + '.txt')).open('w+') as f:
+        f.write('%s\n' % json.dumps(cfg))
+        f.write(', '.join(str(x[0]) for x in mb_averages))
 
     # Plotting performace
     # plt.plot(list(range(len(mb_averages))), mb_averages)
