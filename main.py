@@ -2,9 +2,8 @@ import json
 import logging
 import os
 import random
-import time
 from pathlib import Path
-
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from stable_baselines.common import set_global_seeds
@@ -39,8 +38,17 @@ def main():
     # Create and wrap the environment
     logging.info('Starting {env_name}'.format(**cfg))
     env = make_atari_env(env_id=cfg['env_name'], num_env=1, seed=cfg['train_seed'])
+
     env = VecFrameStack(env, n_stack=4)
     env = VecNormalize(env)
+    old_fn = env.step
+    mb_values = []
+
+    def new_fn(self, *args, **kwargs):
+        xs = old_fn(self, *args, **kwargs)
+        mb_values.append(xs[1])  # This is the reward as given by the
+        return xs
+    env.step = new_fn
 
     # Setting all known random seeds
     random.seed(cfg['train_seed'])
@@ -51,23 +59,37 @@ def main():
     logging.info('Running {algo}'.format(**cfg))
     model = FUNC_DICT[cfg['algo']](policy=cfg['policy_type'], env=env)
     model.verbose = 1
-
-    if cfg['train_time'] == 0:
-        logging.info('Training for unlimited time')
-    else:
-        logging.info('Limiting train time to {train_time} seconds'.format(**cfg))
+    logging.info('Training for {time_steps} steps'.format(**cfg))
 
     # Loading file if available
 
-    # Training for chosen length of time
+    # Logging metric
+    mb_averages = []
 
-    start_time = time.time()
-    while cfg['train_time'] == 0 or (time.time() - start_time) < cfg['train_time']:
-        model.learn(total_timesteps=200, log_interval=100)
+    def callback(locals, globals):
+        nonlocal mb_values
+        # print(locals['self'].env.__dict__.keys())
+        if len(mb_values) >= 100:
+            mb_averages.append((sum(mb_values[:100])/100))
+            mb_values = mb_values[100:]
+
+    # Training
+    model.learn(total_timesteps=cfg['time_steps'], log_interval=100, callback=callback)
+
+    print(mb_averages)
 
     # Saving
-    logging.info('Saving model')
+    logging.info('Saving model and metrics')
     model.save(str(Path(cfg['model_save_dir']).expanduser() / '{env_name}-{algo}-{policy_type}'.format(**cfg)))
+    f = open(str(Path(cfg['metric_save_dir']).expanduser() / '{env_name}-{algo}-{policy_type}.txt'.format(**cfg)), "w+")
+    f.write('%s\n' % json.dumps(cfg))
+    f.write(', '.join(str(x[0]) for x in mb_averages))
+    f.close()
+
+    # Plotting performace
+    # plt.plot(list(range(len(mb_averages))), mb_averages)
+    # plt.show()
+
 
     # Displaying gameplay
     obs = env.reset()
