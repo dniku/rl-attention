@@ -66,13 +66,20 @@ def nature_cnn(scaled_images, **kwargs):
 def attention_cnn(scaled_images, **kwargs):
     """Nature CNN with region-sensitive module"""
 
+    def softmax_2d(tensor):
+        b, h, w, c = tensor.shape
+        tensor = tf.reshape(tensor, (-1, h * w, c))
+        tensor = tf.nn.softmax(tensor, axis=1)
+        tensor = tf.reshape(tensor, (-1, h, w, c))
+        return tensor
+
     c1 = tf.keras.layers.Conv2D(filters=32, kernel_size=8, strides=4, activation='relu', name='c1')(scaled_images)
     c2 = tf.keras.layers.Conv2D(filters=64, kernel_size=4, strides=2, activation='relu', name='c2')(c1)
     c3 = tf.keras.layers.Conv2D(filters=64, kernel_size=3, strides=1, activation='relu', name='c3')(c2)
     c3 = tf.keras.backend.l2_normalize(c3, axis=-1)  # TODO Axis correct?
 
     a1 = tf.keras.layers.Conv2D(filters=512, kernel_size=1, strides=1, activation='elu', name='a1')(c3)
-    a2 = tf.keras.layers.Conv2D(filters=2, kernel_size=1, strides=1, activation='softmax', name='a2')(a1)
+    a2 = softmax_2d(tf.keras.layers.Conv2D(filters=2, kernel_size=1, strides=1, name='a2')(a1))
 
     # TODO Multiplications correct?
     c4 = tf.multiply(c3, tf.expand_dims(a2[:, :, :, 0], axis=-1))
