@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+
 def nature_cnn(scaled_images, **kwargs):
     """Set up the CNN's architecture"""
 
@@ -19,21 +20,21 @@ def nature_cnn(scaled_images, **kwargs):
 #         super().__init__()
 #         self.atoms = args.atoms
 #         self.action_space = action_space
-
+#
 #         # torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True)
 #         self.conv1 = nn.Conv2d(args.history_length, 32, 8, stride=4, padding=1)
 #         self.conv2 = nn.Conv2d(32, 64, 4, stride=2)
 #         self.conv3 = nn.Conv2d(64, 64, 3)
-
-#         # region-sensitive module (iput_chan, output_chan, kernel_size)
+#
+#         # region-sensitive module (input_chan, output_chan, kernel_size)
 #         self.conv1_attent = nn.Conv2d(64, 512, 1)
 #         self.conv2_attent = nn.Conv2d(512, 2, 1)
-
+#
 #         self.fc_h_v = NoisyLinear(3136, args.hidden_size, std_init=args.noisy_std)
 #         self.fc_h_a = NoisyLinear(3136, args.hidden_size, std_init=args.noisy_std)
 #         self.fc_z_v = NoisyLinear(args.hidden_size, self.atoms, std_init=args.noisy_std)
 #         self.fc_z_a = NoisyLinear(args.hidden_size, action_space * self.atoms, std_init=args.noisy_std)
-
+#
 #     def forward(self, x, log=False):
 #         x = F.relu(self.conv1(x))
 #         x = F.relu(self.conv2(x))
@@ -42,14 +43,14 @@ def nature_cnn(scaled_images, **kwargs):
 #         batch_size = x.size(0)
 #         weights = F.elu(self.conv1_attent(x))
 #         weights = self.conv2_attent(weights).view(-1, 2, 49)
-#         weights = F.softmax(weights.view(batch_size*2,-1), dim=1) #2D tensor by default is also dim 1
-#         weights = weights.view(batch_size,2,7,7)
-
-#         #Broadcasting
+#         weights = F.softmax(weights.view(batch_size * 2, -1), dim=1)  # 2D tensor by default is also dim 1
+#         weights = weights.view(batch_size, 2, 7, 7)
+#
+#         # Broadcasting
 #         x1 = x * weights[:, :1, :, :]
 #         x2 = x * weights[:, 1:, :, :]
 #         x = x1 + x2
-
+#
 #         x = x.view(-1, 3136)
 #         v = self.fc_z_v(F.relu(self.fc_h_v(x)))  # Value stream
 #         a = self.fc_z_a(F.relu(self.fc_h_a(x)))  # Advantage stream
@@ -59,7 +60,7 @@ def nature_cnn(scaled_images, **kwargs):
 #             q = F.log_softmax(q, dim=2)  # Log probabilities with action over second dimension
 #         else:
 #             q = F.softmax(q, dim=2)  # Probabilities with action over second dimension
-#         return q # shape: (-1, self.action_space, self.atoms)
+#         return q  # shape: (-1, self.action_space, self.atoms)
 
 
 def attention_cnn(scaled_images, **kwargs):
