@@ -3,44 +3,50 @@ import logging
 import os
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import tensorflow as tf
-
+from stable_baselines import A2C, ACER, ACKTR, DQN, DDPG, PPO1, PPO2, SAC, TRPO
 from stable_baselines.common.cmd_util import make_atari_env
 from stable_baselines.common.vec_env import VecFrameStack
 from stable_baselines.common.vec_env import VecNormalize
 
 try:
     from stable_baselines.common import set_global_seeds
-except:
-    set_global_seeds = lambda x: print("WARNING: Seed can't be fixed, set_global_seeds doesn't exist. Please use this version: https://github.com/RerRayne/stable-baselines")
+except ImportError:
+    import warnings
 
-from models import a2c, acer, acktr, deepq, ddpg, ppo1, ppo2, sac, trpo
+    def set_global_seeds(_):
+        warnings.warn(
+            "Seed can't be fixed, set_global_seeds doesn't exist. "
+            "Please use this version: https://github.com/RerRayne/stable-baselines"
+        )
+
 
 def set_model_seed(model, seed):
     if hasattr(model.env, 'seed'):
         model.env.seed(seed)
     else:
         model.env.env_method("seed", seed)
-    
+
     return model
+
+
+# All available training algorithms
+ALGOS_DICT = {
+    'a2c': A2C,
+    'acer': ACER,
+    'acktr': ACKTR,
+    'dqn': DQN,
+    'ddpg': DDPG,
+    'ppo1': PPO1,
+    'ppo2': PPO2,
+    'sac': SAC,
+    'trpo': TRPO,
+}
+
 
 def main():
     with open('config.json', 'r') as fp:
         cfg = json.load(fp)
-
-    # Making policies callable
-    FUNC_DICT = {
-        'a2c': a2c.A2C,
-        'acer': acer.ACER,
-        'acktr': acktr.ACKTR,
-        'dqn': deepq.DQN,
-        'ddpg': ddpg.DDPG,
-        'ppo1': ppo1.PPO1,
-        'ppo2': ppo2.PPO2,
-        'sac': sac.SAC,
-        'trpo': trpo.TRPO,
-    }
 
     # Setting log levels to cut out minor errors
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -62,16 +68,15 @@ def main():
 
     env.step = new_fn
 
-    # Setting all known random seeds
-    # (sets seeds in Python, Numpy, TF, Gym if available)
+    # Setting all known random seeds (Python, Numpy, TF, Gym if available)
     set_global_seeds(cfg['train_seed'])
 
     logging.info('Running {algo}'.format(**cfg))
-    model = FUNC_DICT[cfg['algo']](policy=cfg['policy_type'], env=env)
+    model = ALGOS_DICT[cfg['algo']](policy=cfg['policy_type'], env=env)
     model.verbose = 1
-    
+
     model = set_model_seed(model, cfg['train_seed'])
-        
+
     logging.info('Training for {time_steps} steps'.format(**cfg))
 
     # Loading file if available
@@ -83,7 +88,7 @@ def main():
         nonlocal mb_values
         # print(locals['self'].env.__dict__.keys())
         if len(mb_values) >= 100:
-            mb_averages.append((sum(mb_values[:100])/100))
+            mb_averages.append((sum(mb_values[:100]) / 100))
             mb_values = mb_values[100:]
 
     # Training
@@ -106,7 +111,6 @@ def main():
     # Plotting performace
     # plt.plot(list(range(len(mb_averages))), mb_averages)
     # plt.show()
-
 
     # Displaying gameplay
     obs = env.reset()
