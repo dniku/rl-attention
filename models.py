@@ -88,3 +88,12 @@ def attention_cnn(scaled_images, **kwargs):
     d = tf.keras.layers.Dense(units=512, activation='relu', name='d')(tf.keras.layers.Flatten()(c4))
 
     return d
+
+
+def entropy_2d(probs):
+    """
+    :param probs: [batch * height * width * channels].
+    Assumes that each channel is a probability distribution.
+    :return: [batch * channels]. Entropy for each channel.
+    """
+    return tf.einsum('bhwc,bhwc->bc', tf.log(probs), probs)
