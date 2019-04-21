@@ -5,13 +5,25 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from stable_baselines.common import set_global_seeds
+
 from stable_baselines.common.cmd_util import make_atari_env
 from stable_baselines.common.vec_env import VecFrameStack
 from stable_baselines.common.vec_env import VecNormalize
 
+try:
+    from stable_baselines.common import set_global_seeds
+except:
+    set_global_seeds = lambda x: print("WARNING: Seed can't be fixed, set_global_seeds doesn't exist. Please use this version: https://github.com/RerRayne/stable-baselines")
+
 from models import a2c, acer, acktr, deepq, ddpg, ppo1, ppo2, sac, trpo
 
+def set_model_seed(model, seed):
+    if hasattr(model.env, 'seed'):
+        model.env.seed(seed)
+    else:
+        model.env.env_method("seed", seed)
+    
+    return model
 
 def main():
     with open('config.json', 'r') as fp:
@@ -57,6 +69,9 @@ def main():
     logging.info('Running {algo}'.format(**cfg))
     model = FUNC_DICT[cfg['algo']](policy=cfg['policy_type'], env=env)
     model.verbose = 1
+    
+    model = set_model_seed(model, cfg['train_seed'])
+        
     logging.info('Training for {time_steps} steps'.format(**cfg))
 
     # Loading file if available
