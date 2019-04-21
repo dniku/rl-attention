@@ -1,5 +1,7 @@
 # rl-attention
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Pastafarianist/rl-attention/blob/master/attention_model.ipynb)
+
 ### Instructions
 
 To use the launcher, run in the cloned repository:
