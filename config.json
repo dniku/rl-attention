@@ -6,5 +6,6 @@
   "train_time": 0,
   "train_seed": 0,
   "model_save_dir": "saved_models",
-  "metric_save_dir": "saved_metrics"
+  "metric_save_dir": "saved_metrics",
+  "enjoy": false
 }
