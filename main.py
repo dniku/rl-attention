@@ -14,6 +14,7 @@ try:
 except ImportError:
     import warnings
 
+
     def set_global_seeds(_):
         warnings.warn(
             "Seed can't be fixed, set_global_seeds doesn't exist. "
@@ -65,21 +66,21 @@ def main():
     model = ALGOS_DICT[cfg['algo']](
         policy=cfg['policy_type'],
         env=env,
-        tensorboard_log='./logs/{env_name}'.format(**cfg)
+        tensorboard_log=cfg['log_dir']
     )
     model.verbose = 1
 
     logging.info('Training for {time_steps} steps'.format(**cfg))
 
     # Training
-    model.learn(total_timesteps=cfg['time_steps'], log_interval=100)
+    model.learn(total_timesteps=cfg['time_steps'], log_interval=cfg['log_interval'])
 
     # Saving
     logging.info('Saving model and metrics')
 
-    save_dir = Path(cfg['model_save_dir']).expanduser()
-
     base_name = '{env_name}-{algo}-{policy_type}'.format(**cfg)
+
+    save_dir = Path('/tmp/rl-attention')
     model.save(str(save_dir / base_name))
 
     with (save_dir / (base_name + '.txt')).open('w+') as f:
