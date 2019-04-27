@@ -1,15 +1,33 @@
+import numpy as np
 import tensorflow as tf
+from stable_baselines.a2c.utils import conv, linear, conv_to_fc
+
+mapping = {}
 
 
+def register(network_fn):
+    mapping[network_fn.__name__] = network_fn
+    return network_fn
+
+
+def get_network_builder(network_name):
+    return mapping[network_name]
+
+
+@register
 def nature_cnn(scaled_images, **kwargs):
-    """Set up the CNN's architecture"""
-
-    layer1 = tf.keras.layers.Conv2D(filters=32, kernel_size=8, strides=4, activation='relu', name='c1')(scaled_images)
-    layer2 = tf.keras.layers.Conv2D(filters=64, kernel_size=4, strides=2, activation='relu', name='c2')(layer1)
-    layer3 = tf.keras.layers.Conv2D(filters=64, kernel_size=3, strides=1, activation='relu', name='c3')(layer2)
-    layer4 = tf.keras.layers.Dense(units=512, activation='relu', name='c4')(tf.keras.layers.Flatten()(layer3))
-
-    return layer4
+    """
+    CNN from Nature paper.
+    :param scaled_images: (TensorFlow Tensor) Image input placeholder
+    :param kwargs: (dict) Extra keywords parameters for the convolutional layers of the CNN
+    :return: (TensorFlow Tensor) The CNN output layer
+    """
+    activ = tf.nn.relu
+    layer_1 = activ(conv(scaled_images, 'c1', n_filters=32, filter_size=8, stride=4, init_scale=np.sqrt(2), **kwargs))
+    layer_2 = activ(conv(layer_1, 'c2', n_filters=64, filter_size=4, stride=2, init_scale=np.sqrt(2), **kwargs))
+    layer_3 = activ(conv(layer_2, 'c3', n_filters=64, filter_size=3, stride=1, init_scale=np.sqrt(2), **kwargs))
+    layer_3 = conv_to_fc(layer_3)
+    return activ(linear(layer_3, 'fc1', n_hidden=512, init_scale=np.sqrt(2)))
 
 
 # PyTorch model from Learn to Interpret Atari Agents
@@ -63,6 +81,7 @@ def nature_cnn(scaled_images, **kwargs):
 #         return q  # shape: (-1, self.action_space, self.atoms)
 
 
+@register
 def attention_cnn(scaled_images, **kwargs):
     """Nature CNN with region-sensitive module"""
 
@@ -73,21 +92,20 @@ def attention_cnn(scaled_images, **kwargs):
         tensor = tf.reshape(tensor, (-1, h, w, c))
         return tensor
 
-    c1 = tf.keras.layers.Conv2D(filters=32, kernel_size=8, strides=4, activation='relu', name='c1')(scaled_images)
-    c2 = tf.keras.layers.Conv2D(filters=64, kernel_size=4, strides=2, activation='relu', name='c2')(c1)
-    c3 = tf.keras.layers.Conv2D(filters=64, kernel_size=3, strides=1, activation='relu', name='c3')(c2)
-    c3 = tf.keras.backend.l2_normalize(c3, axis=-1)  # TODO Axis correct?
+    c1 = tf.nn.relu(conv(scaled_images, 'c1', n_filters=32, filter_size=8, stride=4, init_scale=np.sqrt(2), **kwargs))
+    c2 = tf.nn.relu(conv(c1, 'c2', n_filters=64, filter_size=4, stride=2, init_scale=np.sqrt(2), **kwargs))
+    c3 = tf.nn.relu(conv(c2, 'c3', n_filters=64, filter_size=3, stride=1, init_scale=np.sqrt(2), **kwargs))
+    c3 = tf.nn.l2_normalize(c3, axis=-1)
 
-    a1 = tf.keras.layers.Conv2D(filters=512, kernel_size=1, strides=1, activation='elu', name='a1')(c3)
-    a2 = softmax_2d(tf.keras.layers.Conv2D(filters=2, kernel_size=1, strides=1, name='a2')(a1))
+    a1 = tf.nn.elu(conv(c3, 'a1', n_filters=512, filter_size=1, stride=1, init_scale=np.sqrt(2), **kwargs))
+    a2 = softmax_2d(conv(a1, 'a2', n_filters=2, filter_size=1, stride=1, init_scale=np.sqrt(2), **kwargs))
 
-    # TODO Multiplications correct?
-    c4 = tf.multiply(c3, tf.expand_dims(a2[:, :, :, 0], axis=-1))
-    c4 += tf.multiply(c3, tf.expand_dims(a2[:, :, :, 1], axis=-1))
+    x1 = c3 * tf.expand_dims(a2[..., 0], -1)
+    x2 = c3 * tf.expand_dims(a2[..., 1], -1)
+    x = x1 + x2
 
-    d = tf.keras.layers.Dense(units=512, activation='relu', name='d')(tf.keras.layers.Flatten()(c4))
-
-    return d
+    x = conv_to_fc(x)
+    return tf.nn.relu(linear(x, 'fc1', n_hidden=512, init_scale=np.sqrt(2)))
 
 
 def entropy_2d(probs):
