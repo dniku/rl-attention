@@ -23,7 +23,7 @@ def entropy_2d(probs):
 
 
 @register
-def attention_entropy(ent_coef=0.1):
+def attention_entropy(ent_coef):
     def return_tensor():
         sess = tf.get_default_session()
         if sess is None:
