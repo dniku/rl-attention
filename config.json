@@ -4,6 +4,8 @@
   "policy_type": "CnnPolicy",
   "network": "attention_cnn",
   "algo": "ppo2",
+  "attn_loss": "attention_entropy",
+  "ent_coef": "0.1",
   "train_time": 0,
   "train_seed": 0,
   "log_dir": "tb",

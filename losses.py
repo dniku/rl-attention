@@ -23,15 +23,16 @@ def entropy_2d(probs):
 
 
 @register
-def attention_entropy():
-    ent_coef = 0.1
-    sess = tf.get_default_session()
-    if sess is None:
-        sess = make_session()
-    a2 = sess.graph.get_tensor_by_name('train_model/model/a2_1:0')
-    a2_entropy = entropy_2d(a2)
-    attn_entropy = tf.reduce_sum(a2_entropy, -1)
-    attn_entropy = tf.reduce_mean(attn_entropy)
-    return attn_entropy * ent_coef
+def attention_entropy(ent_coef=0.1):
+    def return_tensor():
+        sess = tf.get_default_session()
+        if sess is None:
+            sess = make_session()
+        a2 = sess.graph.get_tensor_by_name('train_model/model/a2_1:0')
+        a2_entropy = entropy_2d(a2)
+        attn_entropy = tf.reduce_sum(a2_entropy, -1)
+        attn_entropy = tf.reduce_mean(attn_entropy)
+        return attn_entropy * ent_coef
+    return return_tensor
 
 
