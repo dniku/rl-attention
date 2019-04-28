@@ -1,11 +1,12 @@
 {
   "env_name": "PongNoFrameskip-v4",
-  "time_steps": 2000,
+  "time_steps": 10000000,
   "policy_type": "CnnPolicy",
-  "algo": "a2c",
+  "network": "attention_cnn",
+  "algo": "ppo2",
   "train_time": 0,
   "train_seed": 0,
-  "model_save_dir": "saved_models",
-  "metric_save_dir": "saved_metrics",
+  "log_dir": "tb",
+  "log_interval": 100,
   "enjoy": false
 }
