@@ -7,6 +7,6 @@
   "train_time": 0,
   "train_seed": 0,
   "log_dir": "tb",
-  "log_interval": 100,
+  "log_interval": 1,
   "enjoy": false
 }
