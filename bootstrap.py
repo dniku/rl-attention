@@ -11,7 +11,7 @@ def run(cmd: str):
     subprocess.check_call(cmd, shell=True)
 
 
-def setup_environment(run_ts: str, ssh_key=None):
+def setup_environment(run_ts: str, ssh_keys=None):
     if 'google.colab' in sys.modules:
         print('Running on Colab')
 
@@ -22,7 +22,7 @@ def setup_environment(run_ts: str, ssh_key=None):
         run_dir = project_root / 'runs' / run_ts
 
         # Setup ssh access (has its own mechanism to prevent running twice)
-        setup_serveo(forward_ports=[6006], ssh_key=ssh_key)
+        setup_serveo(forward_ports=[6006], ssh_keys=ssh_keys)
 
         if not drive_mount_point.exists():
             print('Setting up container environment...')
@@ -49,10 +49,10 @@ def setup_environment(run_ts: str, ssh_key=None):
     return run_dir
 
 
-def setup_serveo(alias=None, ssh_key=None, suppress_host_checking=True, forward_ports=None, force=False):
+def setup_serveo(alias=None, ssh_keys=None, suppress_host_checking=True, forward_ports=None, force=False):
     def get_connection_command():
         with open('serveo.json', 'r') as fp:
-            config = json.load(fp)
+            cfg = json.load(fp)
 
         command = ['ssh']
         if suppress_host_checking:
@@ -67,16 +67,17 @@ def setup_serveo(alias=None, ssh_key=None, suppress_host_checking=True, forward_
                 ])
         command.extend([
             '-o', 'ProxyJump=serveo.net',
-            'root@' + config['alias']
+            'root@' + cfg['alias']
         ])
 
-        return ' '.join(shlex.quote(token) for token in command)
+        return ' '.join(shlex.quote(token) for token in command), cfg['password']
 
     if not force:
         try:
-            cmd = get_connection_command()
+            cmd, password = get_connection_command()
             print('ssh tunnel is already open, connect via:')
             print(cmd)
+            print("Root password: {}".format(password))
             return
         except FileNotFoundError:
             pass
@@ -96,10 +97,11 @@ def setup_serveo(alias=None, ssh_key=None, suppress_host_checking=True, forward_
     run('echo "LD_LIBRARY_PATH=/usr/lib64-nvidia" >> /root/.bashrc')
     run('echo "export LD_LIBRARY_PATH" >> /root/.bashrc')
 
-    if ssh_key is not None:
+    if ssh_keys is not None:
         # Setup passwordless login
         run('mkdir -p /root/.ssh')
-        run('echo {} >> /root/.ssh/authorized_keys'.format(ssh_key))
+        for ssh_key in ssh_keys:
+            run('echo {} >> /root/.ssh/authorized_keys'.format(ssh_key))
 
     # Run sshd
     run('/usr/sbin/sshd -D &')
@@ -108,8 +110,6 @@ def setup_serveo(alias=None, ssh_key=None, suppress_host_checking=True, forward_
     if alias is None:
         alias = ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
     run('ssh -o StrictHostKeyChecking=no -R {}:22:localhost:22 serveo.net &'.format(alias))
-    # Print root password
-    print("Root password: {}".format(password))
 
     with open('serveo.json', 'w') as fp:
         json.dump({
@@ -117,5 +117,7 @@ def setup_serveo(alias=None, ssh_key=None, suppress_host_checking=True, forward_
             'password': password,
         }, fp)
 
+    cmd, password = get_connection_command()
     print('ssh tunnel has been set up, connect via:')
-    print(get_connection_command())
+    print(cmd)
+    print("Root password: {}".format(password))
