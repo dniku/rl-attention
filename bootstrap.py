@@ -11,7 +11,7 @@ def run(cmd: str):
     subprocess.check_call(cmd, shell=True)
 
 
-def setup_environment(run_ts: str, ssh_keys=None):
+def setup_environment(run_name: str, ssh_keys=None):
     if 'google.colab' in sys.modules:
         print('Running on Colab')
 
@@ -20,7 +20,7 @@ def setup_environment(run_ts: str, ssh_keys=None):
         drive_mount_point = Path('/content/gdrive')
         project_root = drive_mount_point / 'My Drive' / 'rl-attention'
         runs_dir = project_root / 'runs'
-        run_dir = runs_dir / run_ts
+        run_dir = runs_dir / run_name
 
         # Setup ssh access (has its own mechanism to prevent running twice)
         setup_serveo(forward_ports=[6006], ssh_keys=ssh_keys)
@@ -38,13 +38,10 @@ def setup_environment(run_ts: str, ssh_keys=None):
             # Mount Google Drive for logging
             from google.colab import drive
             drive.mount(str(drive_mount_point))
-        elif not 'rl-attention' in sys.path:
-            print('Setting up Python kernel configuration')
-            sys.path.append('rl-attention')
     else:
         print('Running locally')
         project_root = Path('/tmp/rl-attention')
-        run_dir = project_root / run_ts
+        run_dir = project_root / run_name
 
     run_dir.mkdir(exist_ok=True, parents=True)
     return run_dir
