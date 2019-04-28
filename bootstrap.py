@@ -19,7 +19,8 @@ def setup_environment(run_ts: str, ssh_keys=None):
 
         drive_mount_point = Path('/content/gdrive')
         project_root = drive_mount_point / 'My Drive' / 'rl-attention'
-        run_dir = project_root / 'runs' / run_ts
+        runs_dir = project_root / 'runs'
+        run_dir = runs_dir / run_ts
 
         # Setup ssh access (has its own mechanism to prevent running twice)
         setup_serveo(forward_ports=[6006], ssh_keys=ssh_keys)
@@ -32,7 +33,7 @@ def setup_environment(run_ts: str, ssh_keys=None):
             run('pip install -q git+https://github.com/RerRayne/stable-baselines')
 
             # Run Tensorboard
-            run('tensorboard --logdir {} &'.format(shlex.quote(str(run_dir))))
+            run('tensorboard --logdir {} &'.format(shlex.quote(str(runs_dir))))
 
             # Mount Google Drive for logging
             from google.colab import drive
