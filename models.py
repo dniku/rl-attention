@@ -99,10 +99,9 @@ def attention_cnn(scaled_images, **kwargs):
 
     a1 = tf.nn.elu(conv(c3, 'a1', n_filters=512, filter_size=1, stride=1, init_scale=np.sqrt(2), **kwargs))
     a2 = softmax_2d(conv(a1, 'a2', n_filters=2, filter_size=1, stride=1, init_scale=np.sqrt(2), **kwargs))
+    attn = tf.reduce_sum(a2, axis=-1, keepdims=True)
 
-    x1 = c3 * tf.expand_dims(a2[..., 0], -1)
-    x2 = c3 * tf.expand_dims(a2[..., 1], -1)
-    x = x1 + x2
+    x = c3 * attn
 
     x = conv_to_fc(x)
     return tf.nn.relu(linear(x, 'fc1', n_hidden=512, init_scale=np.sqrt(2)))
