@@ -19,6 +19,7 @@ def entropy_2d(probs):
     Assumes that each channel is a probability distribution.
     :return: [batch * channels]. Entropy for each channel.
     """
+    probs = probs + tf.keras.backend.epsilon()
     return -tf.einsum('bhwc,bhwc->bc', tf.log(probs), probs)
 
 
