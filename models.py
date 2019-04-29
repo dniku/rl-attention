@@ -101,10 +101,6 @@ def attention_cnn(scaled_images, **kwargs):
     a2 = softmax_2d(conv(a1, 'a2', n_filters=2, filter_size=1, stride=1, init_scale=np.sqrt(2), **kwargs))
     attn = tf.reduce_sum(a2, axis=-1, keepdims=True, name='attn')
 
-    a2_entropy = entropy_2d(a2)
-    attn_entropy = tf.reduce_sum(a2_entropy, -1)
-    print(attn_entropy)
-
     x = c3 * attn
 
     x = conv_to_fc(x)
