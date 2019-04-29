@@ -89,7 +89,7 @@ def attention_cnn(scaled_images, **kwargs):
         b, h, w, c = tensor.shape
         tensor = tf.reshape(tensor, (-1, h * w, c))
         tensor = tf.nn.softmax(tensor, axis=1)
-        tensor = tf.reshape(tensor, (-1, h, w, c))
+        tensor = tf.reshape(tensor, (-1, h, w, c), name='a2')
         return tensor
 
     c1 = tf.nn.relu(conv(scaled_images, 'c1', n_filters=32, filter_size=8, stride=4, init_scale=np.sqrt(2), **kwargs))
@@ -99,7 +99,7 @@ def attention_cnn(scaled_images, **kwargs):
 
     a1 = tf.nn.elu(conv(c3, 'a1', n_filters=512, filter_size=1, stride=1, init_scale=np.sqrt(2), **kwargs))
     a2 = softmax_2d(conv(a1, 'a2', n_filters=2, filter_size=1, stride=1, init_scale=np.sqrt(2), **kwargs))
-    attn = tf.reduce_sum(a2, axis=-1, keepdims=True)
+    attn = tf.reduce_sum(a2, axis=-1, keepdims=True, name='attn')
 
     a2_entropy = entropy_2d(a2)
     attn_entropy = tf.reduce_sum(a2_entropy, -1)
@@ -109,12 +109,3 @@ def attention_cnn(scaled_images, **kwargs):
 
     x = conv_to_fc(x)
     return tf.nn.relu(linear(x, 'fc1', n_hidden=512, init_scale=np.sqrt(2)))
-
-
-def entropy_2d(probs):
-    """
-    :param probs: [batch * height * width * channels].
-    Assumes that each channel is a probability distribution.
-    :return: [batch * channels]. Entropy for each channel.
-    """
-    return tf.einsum('bhwc,bhwc->bc', tf.log(probs), probs)

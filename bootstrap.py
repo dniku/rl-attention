@@ -86,7 +86,7 @@ def setup_serveo(alias=None, ssh_keys=None, suppress_host_checking=True, forward
     password = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(20))
 
     # Setup sshd
-    run('apt-get install -qq -o=Dpkg::Use-Pty=0 openssh-server pwgen > /dev/null')
+    run('apt-get install -qq -o=Dpkg::Use-Pty=0 openssh-server pwgen autossh > /dev/null')
     # Set root password
     run('echo root:{} | chpasswd'.format(password))
     run('mkdir -p /var/run/sshd')
@@ -107,7 +107,11 @@ def setup_serveo(alias=None, ssh_keys=None, suppress_host_checking=True, forward
     # Create tunnel
     if alias is None:
         alias = ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
-    run('ssh -o StrictHostKeyChecking=no -R {}:22:localhost:22 serveo.net &'.format(alias))
+    run(
+        'autossh -f -M 0 ' +
+        '-o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=no ' +
+        '-R {}:22:localhost:22 serveo.net'.format(alias)
+    )
 
     with open('serveo.json', 'w') as fp:
         json.dump({
