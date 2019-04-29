@@ -19,7 +19,7 @@ def entropy_2d(probs):
     Assumes that each channel is a probability distribution.
     :return: [batch * channels]. Entropy for each channel.
     """
-    return tf.einsum('bhwc,bhwc->bc', tf.log(probs), probs)
+    return -tf.einsum('bhwc,bhwc->bc', tf.log(probs), probs)
 
 
 @register
@@ -32,6 +32,7 @@ def attention_entropy(ent_coef):
         a2_entropy = entropy_2d(a2)
         attn_entropy = tf.reduce_sum(a2_entropy, -1)
         attn_entropy = tf.reduce_mean(attn_entropy)
+        print(ent_coef)
         return attn_entropy * ent_coef
     return return_tensor
 
