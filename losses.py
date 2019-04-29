@@ -24,7 +24,7 @@ def entropy_2d(probs):
 
 
 @register
-def attention_entropy(ent_coef):
+def attention_entropy():
     def return_tensor():
         sess = tf.get_default_session()
         if sess is None:
@@ -33,8 +33,7 @@ def attention_entropy(ent_coef):
         a2_entropy = entropy_2d(a2)
         attn_entropy = tf.reduce_sum(a2_entropy, -1)
         attn_entropy = tf.reduce_mean(attn_entropy)
-        print(ent_coef)
-        return attn_entropy * ent_coef
+        return attn_entropy
     return return_tensor
 
 
