@@ -15,8 +15,6 @@ def setup_environment(run_name: str, ssh_keys=None):
     if 'google.colab' in sys.modules:
         print('Running on Colab')
 
-        # Two steps: global container and Python kernel configuration.
-
         drive_mount_point = Path('/content/gdrive')
         project_root = drive_mount_point / 'My Drive' / 'rl-attention'
         runs_dir = project_root / 'runs'
