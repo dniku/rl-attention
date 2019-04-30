@@ -50,6 +50,26 @@ ALGOS_DICT = {
     'sac': SAC,
     'trpo': TRPO,
 }
+class Callback(object):
+    def __init__(self, output_dir):
+        self.output_dir = output_dir
+        self.pbar = None
+
+    def __call__(self, _locals, _globals):
+        if self.pbar is None:
+            self.pbar = tqdm(total=_locals['nupdates'] * _locals['self'].n_batch)
+
+        self.pbar.update(_locals['self'].n_batch)
+        self.pbar.set_postfix_str('{update}/{nupdates} updates'.format(**_locals))
+
+        if _locals['update'] == _locals['nupdates']:
+            self.pbar.close()
+            self.pbar = None
+
+        if _locals['update'] % 100 == 1 or _locals['update'] == _locals['nupdates']:
+            _locals['self'].save(str(self.output_dir / 'model.pkl'))
+
+        return True
 
 
 def make_run_name(cfg):
@@ -108,6 +128,7 @@ def main(cfg, run_dir):
         total_timesteps=cfg['time_steps'],
         log_interval=cfg['log_interval'],
         tb_log_name=None,
+        callback=Callback(output_dir),
     )
 
     if cfg['enjoy']:
