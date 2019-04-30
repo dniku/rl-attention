@@ -1,3 +1,6 @@
+import tensorflow as tf
+import numpy as np
+
 class SaliencyRenderer():
     def __init__(self, callback_locals):
         self.session = callback_locals['self'].sess
