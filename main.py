@@ -146,12 +146,21 @@ if __name__ == '__main__':
         format='[%(asctime)-15s] %(levelname)s: %(message)s'
     )
 
+    with open('config.json', 'r') as fp:
+        cfg = json.load(fp)
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--run-dir', type=Path, default=Path('/tmp/rl-attention'),
                         help='Path for directories with per-run outputs')
+    parser.add_argument('--train-seed', type=int, default=cfg['train_seed'],
+                        help='Random seed applied before training')
+    parser.add_argument('--attn-coef', type=float, default=cfg['attn_coef'],
+                        help='Coefficient before attention loss')
     args = parser.parse_args()
 
-    with open('config.json', 'r') as fp:
-        cfg = json.load(fp)
+    cfg.update({
+        'train_seed': cfg['train_seed'],
+        'attn_coef': cfg['attn_coef'],
+    })
 
     main(cfg, args.run_dir)
