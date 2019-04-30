@@ -100,7 +100,7 @@ def main(cfg, run_dir):
 
     # Create and wrap the environment
     logging.info('Starting {env_name}'.format(**cfg))
-    env = make_atari_env(env_id=cfg['env_name'], num_env=1, seed=cfg['train_seed'])
+    env = make_atari_env(env_id=cfg['env_name'], num_env=8, seed=cfg['train_seed'])
     env = VecFrameStack(env, n_stack=4)
     env = VecNormalize(env)
 
