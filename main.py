@@ -74,7 +74,7 @@ class Callback(object):
 
 def make_run_name(cfg):
     run_ts = datetime.now().isoformat(sep='_', timespec='milliseconds').replace(':', '-')
-    return '{env_name},{algo},{network},{train_seed},{run_ts}'.format(run_ts=run_ts, **cfg)
+    return '{env_name},{train_seed},{attn_coef},{run_ts}'.format(run_ts=run_ts, **cfg)
 
 
 def main(cfg, run_dir):
