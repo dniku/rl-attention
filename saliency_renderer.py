@@ -45,7 +45,7 @@ class SaliencyRenderer():
 
         gradient_sigma = gradient_sigma_spread * (np.max(input_values) - np.min(input_values))
 
-        noise_shape = input_values.shape
+        noise_shape = list(input_values.shape)
         noise_shape[0] *= n_gradient_samples
         noise = np.random.normal(0, gradient_sigma, noise_shape)
         noise[0::n_gradient_samples, ...] = 0 # first-batch noise is zero
