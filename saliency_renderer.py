@@ -44,16 +44,23 @@ class SaliencyRenderer():
         gradient_target = self.get_gradient_target(attention_tensor, selection_method)
 
         gradient_sigma = gradient_sigma_spread * (np.max(input_values) - np.min(input_values))
-        
-        gradient_values = np.zeros(input_values.shape + (n_gradient_samples, ))
 
-        for i in range(n_gradient_samples):
-            noise = np.zeros(input_values.shape) if i == 0 else np.random.normal(0, gradient_sigma, input_values.shape)
-            gradient_values[..., i] = self.session.run(tf.gradients(gradient_target, gradient_source_tensor), {input_tensor: input_values + noise})[0] ** 2 # magnitude
+        noise_shape = input_values.shape
+        noise_shape[0] *= n_gradient_samples
+        noise = np.random.normal(0, gradient_sigma, noise_shape)
+        noise[0::n_gradient_samples, ...] = 0 # first-batch noise is zero
+
+        # Repeat batches [0 0 0 0 1 1 1 1 2 2 2 2 3 3...]
+        repeated_input_values = np.repeat(input_values, axis=0, repeats=n_gradient_samples)
+
+        gradient_values = self.session.run(tf.gradients(gradient_target, gradient_source_tensor), {input_tensor: repeated_input_values + noise})[0] ** 2 # magnitude
+
+        # Now group by channel: for batch 0, create 4 different channel values
+        gradient_values = np.reshape(gradient_values, [input_values.shape[0], n_gradient_samples, input_values.shape[1], input_values.shape[2], input_values.shape[3]])
 
         if aggregation_method == 'SMOOTHGRAD':
-            return np.mean(gradient_values, axis=-1)
+            return np.mean(gradient_values, axis=1)
         elif aggregation_method == 'VARGRAD':
-            return np.var(gradient_values, axis=-1)
+            return np.var(gradient_values, axis=1)
         else:
             raise NotImplementedError
