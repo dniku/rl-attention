@@ -159,8 +159,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     cfg.update({
-        'train_seed': cfg['train_seed'],
-        'attn_coef': cfg['attn_coef'],
+        'train_seed': args.train_seed,
+        'attn_coef': args.attn_coef,
     })
 
     main(cfg, args.run_dir)
