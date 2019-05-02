@@ -28,12 +28,10 @@ def filter_k(input_tensor, order_method='max', k=2, top_x=2):
     for filter_n in range(np.shape(input_tensor)[2]):
         centroids.append(weighted_k(input_tensor[..., filter_n], k=k))
 
-    print(len(centroids))
     for i in range(len(centroids)):
         for j in centroids[i]:
             points = get_surrounding_points(j)
             points = np.clip(points, 0, np.shape(input_tensor)[0]-1)
-            print(points)
             point_values = [(input_tensor[k[0], k[1], i]) ** 2 for k in points]
             if order_method == 'max':
                 centroid_value = max(point_values)
