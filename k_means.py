@@ -6,6 +6,7 @@ from sklearn import cluster as skl
 
 testcase = np.random.uniform(low=0, high=15, size = (7,7,4))
 
+
 def get_surrounding_points(j):
     points = []
     points.append((int(np.floor(j[0])), int(np.floor(j[1]))))
@@ -13,6 +14,7 @@ def get_surrounding_points(j):
     points.append((int(np.ceil(j[0])), int(np.floor(j[1]))))
     points.append((int(np.ceil(j[0])), int(np.ceil(j[1]))))
     return points
+
 
 def filter_k(input_tensor, grid=False, order_method='max'):
     '''
