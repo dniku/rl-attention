@@ -12,13 +12,14 @@ def get_surrounding_points(j):
     return points
 
 
-def filter_k(input_tensor, order_method='max', k=2):
+def filter_k(input_tensor, order_method='max', k=2, top_x=2):
     """
     :param input_tensor: A h x w x filters np.array
     :param order_method: 'max' or 'sum'
-    :param k: number of clusters per input
+    :param k: number of clusters per input filter
+    :param top_x: number of peaks to return
 
-    Returns a list of tuples (y, x, filter_number) sorted by decreasing importance of peak.
+    Returns a list of tuples (y, x, filter_number) of length top_x, sorted by decreasing importance of peak.
     """
 
     peaks = []
@@ -39,7 +40,7 @@ def filter_k(input_tensor, order_method='max', k=2):
             best_point = points[int(np.argmax(point_values))]
             peaks.append((best_point[1], best_point[0], i, centroid_value))
     sorted_peaks = sorted(peaks, key=lambda x: -x[3])
-    return [peak[:3] for peak in sorted_peaks[:2]]
+    return [peak[:3] for peak in sorted_peaks[:top_x]]
 
 
 def weighted_k(input_tensor, k=2):
