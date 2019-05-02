@@ -1,30 +1,30 @@
 import numpy as np
 from sklearn import cluster as skl
 
-# testcase = np.random.uniform(low=0, high=15, size = (7,7,4))
-
 
 def get_surrounding_points(j):
-    points = []
-    points.append((int(np.floor(j[0])), int(np.floor(j[1]))))
-    points.append((int(np.floor(j[0])), int(np.ceil(j[1]))))
-    points.append((int(np.ceil(j[0])), int(np.floor(j[1]))))
-    points.append((int(np.ceil(j[0])), int(np.ceil(j[1]))))
+    # Gets the four points surrounding coordinate j
+
+    points = [(int(np.floor(j[0])), int(np.floor(j[1]))),
+              (int(np.floor(j[0])), int(np.ceil(j[1]))),
+              (int(np.ceil(j[0])), int(np.floor(j[1]))),
+              (int(np.ceil(j[0])), int(np.ceil(j[1])))]
     return points
 
 
-def filter_k(input_tensor, grid=False, order_method='max', k=2):
-    '''
+def filter_k(input_tensor, order_method='max', k=2):
+    """
     :param input_tensor: A h x w x filters np.array
-    :param grid: Set to true if need integer valued coordinates.
+    :param order_method: 'max' or 'sum'
+    :param k: number of clusters per input
 
-    Returns a list of tuples (filter_number, [filter_coords])
+    Returns a list of tuples (y, x, filter_number) sorted by decreasing importance of peak.
+    """
 
-    '''
     peaks = []
     centroids = []
-    for filter in range(np.shape(input_tensor)[2]):
-        centroids.append(weighted_k(input_tensor[..., filter], k=k))
+    for filter_n in range(np.shape(input_tensor)[2]):
+        centroids.append(weighted_k(input_tensor[..., filter_n], k=k))
 
     for i in range(len(centroids)):
         for j in centroids[i]:
@@ -32,20 +32,27 @@ def filter_k(input_tensor, grid=False, order_method='max', k=2):
             point_values = [(input_tensor[k[0], k[1], i]) ** 2 for k in points]
             if order_method == 'max':
                 centroid_value = max(point_values)
-            if order_method == 'square':
+            elif order_method == 'square':
                 centroid_value = sum(point_values)
-            best_point = points[np.argmax(point_values)]
-            peaks.append((i, best_point[0], best_point[1], centroid_value))
-    return_values = sorted(peaks, key=lambda x: -x[3])
-    return [(i[2],i[1],i[0]) for i in return_values[:2]]
+            else:
+                raise KeyError
+            best_point = points[int(np.argmax(point_values))]
+            peaks.append((best_point[1], best_point[0], i, centroid_value))
+    sorted_peaks = sorted(peaks, key=lambda x: -x[3])
+    return [peak[:3] for peak in sorted_peaks[:2]]
 
 
-def weighted_k(testcase, k=2):
-    x,y = np.shape(testcase)
-    coords = [(a, b) for a in range(x) for b in range(y)]
-    coords = np.array(coords)
-    kmean = skl.KMeans(n_clusters=k)
-    testcase = np.reshape(testcase, [-1])
-    means =  kmean.fit(coords, sample_weight=testcase).cluster_centers_
+def weighted_k(input_tensor, k=2):
+    # Returns k points via k-means clustering on input_tensor
+
+    x, y = np.shape(input_tensor)
+    coordinates = [(a, b) for a in range(x) for b in range(y)]
+    coordinates = np.array(coordinates)
+    k_mean = skl.KMeans(n_clusters=k)
+    input_tensor = np.reshape(input_tensor, [-1])
+    means = k_mean.fit(coordinates, sample_weight=input_tensor).cluster_centers_
     return means
 
+
+# test_case = np.random.uniform(low=0, high=15, size=(20, 20, 4))
+# print(filter_k(test_case))
