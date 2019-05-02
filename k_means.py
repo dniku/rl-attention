@@ -13,7 +13,7 @@ def get_surrounding_points(j):
     return points
 
 
-def filter_k(input_tensor, order_method='max', k=2, top_x=2, method='peak'):
+def filter_k(input_tensor, order_method='max', k=2, top_x=2, top_f=8, method='peak'):
     """
     :param input_tensor: A h x w x filters np.array
     :param order_method: 'max' or 'sum'
@@ -25,7 +25,11 @@ def filter_k(input_tensor, order_method='max', k=2, top_x=2, method='peak'):
     """
     peaks = []
     centroids = []
-    for filter_n in range(np.shape(input_tensor)[2]):
+    
+    max_relevance_magnitude_by_filter = np.max(input_tensor, axis=(0, 1))
+    top_f_filters = np.argpartition(max_relevance_magnitude_by_filter, -top_f)[-top_f:]
+   
+    for filter_n in top_f_filters:
         if method == 'peak':
             centroids.append(ski.peak_local_max(input_tensor[..., filter_n], num_peaks=k, min_distance=0))
         else:
