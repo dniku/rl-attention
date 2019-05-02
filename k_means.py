@@ -27,6 +27,7 @@ def filter_k(input_tensor, order_method='max', k=2, top_x=2, top_f=8, method='pe
     centroids = []
     
     max_relevance_magnitude_by_filter = np.max(input_tensor, axis=(0, 1))
+    top_f = min(top_f, input_tensor.shape[2])
     top_f_filters = np.argpartition(max_relevance_magnitude_by_filter, -top_f)[-top_f:]
    
     for filter_n in top_f_filters:
