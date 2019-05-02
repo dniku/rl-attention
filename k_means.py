@@ -49,7 +49,7 @@ def filter_k(input_tensor, order_method='max', k=2, top_x=2, top_f=8, method='pe
             else:
                 raise KeyError
             best_point = points[int(np.argmax(point_values))]
-            peaks.append((best_point[0], best_point[1], i, centroid_value))
+            peaks.append((int(best_point[0]), int(best_point[1]), i, centroid_value))
     sorted_peaks = sorted(peaks, key=lambda x: -x[3])
     return [peak[:3] for peak in sorted_peaks[:top_x]]
 
