@@ -1,8 +1,8 @@
-import random
 import numpy as np
-from itertools import chain
-from matplotlib import pyplot as plt
 from sklearn import cluster as skl
+
+# testcase = np.random.uniform(low=0, high=15, size = (7,7,4))
+
 
 def get_surrounding_points(j):
     points = []
@@ -13,7 +13,7 @@ def get_surrounding_points(j):
     return points
 
 
-def filter_k(input_tensor, grid=False, order_method='max'):
+def filter_k(input_tensor, grid=False, order_method='max', k=2):
     '''
     :param input_tensor: A h x w x filters np.array
     :param grid: Set to true if need integer valued coordinates.
@@ -21,14 +21,12 @@ def filter_k(input_tensor, grid=False, order_method='max'):
     Returns a list of tuples (filter_number, [filter_coords])
 
     '''
-
+    peaks = []
     centroids = []
     for filter in range(np.shape(input_tensor)[2]):
-        centroids.append(weighted_k(input_tensor[..., filter]))
+        centroids.append(weighted_k(input_tensor[..., filter], k=k))
 
-    int_centroids = []
     for i in range(len(centroids)):
-        best_points = []
         for j in centroids[i]:
             points = get_surrounding_points(j)
             point_values = [(input_tensor[k[0], k[1], i]) ** 2 for k in points]
@@ -36,10 +34,9 @@ def filter_k(input_tensor, grid=False, order_method='max'):
                 centroid_value = max(point_values)
             if order_method == 'square':
                 centroid_value = sum(point_values)
-            best_points.append(points[np.argmax(point_values)])
-        int_centroids.append((best_points, centroid_value))
-    return_values = list(enumerate(int_centroids))
-    return_values = sorted(return_values, key=lambda x: -x[1][1])
+            best_point = points[np.argmax(point_values)]
+            peaks.append((i, best_point[0], best_point[1], centroid_value))
+    return_values = sorted(peaks, key=lambda x: -x[3])
     return return_values
 
 
@@ -51,3 +48,4 @@ def weighted_k(testcase, k=2):
     testcase = np.reshape(testcase, [-1])
     means =  kmean.fit(coords, sample_weight=testcase).cluster_centers_
     return means
+
