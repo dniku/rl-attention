@@ -27,12 +27,11 @@ def filter_k(input_tensor, order_method='max', k=2, top_x=2, method='peak'):
     centroids = []
     for filter_n in range(np.shape(input_tensor)[2]):
         if method == 'peak':
-            centroids.append(ski.peak_local_max(input_tensor[..., filter_n], num_peaks=2, min_distance=0))
+            centroids.append(ski.peak_local_max(input_tensor[..., filter_n], num_peaks=k, min_distance=0))
         else:
             input_tensor[input_tensor == 0] = np.finfo(float).eps
             centroids.append(weighted_k(input_tensor[..., filter_n], k=k))
 
-    print(centroids)
     for i in range(len(centroids)):
         for j in centroids[i]:
             points = get_surrounding_points(j)
@@ -45,9 +44,8 @@ def filter_k(input_tensor, order_method='max', k=2, top_x=2, method='peak'):
             else:
                 raise KeyError
             best_point = points[int(np.argmax(point_values))]
-            peaks.append((best_point[1], best_point[0], i, centroid_value))
+            peaks.append((best_point[0], best_point[1], i, centroid_value))
     sorted_peaks = sorted(peaks, key=lambda x: -x[3])
-    print('sorted')
     return [peak[:3] for peak in sorted_peaks[:top_x]]
 
 
@@ -67,5 +65,5 @@ def weighted_k(input_tensor, k=2):
 # test_case1 = np.zeros((10, 10, 3))
 # test_case1[0, 0, 0] = 1
 # test_case1[3, 3, 2] = 3
-# test_case1[5, 5, 2] = 5
+# test_case1[5, 6, 2] = 5
 # print(filter_k(test_case1, k=1, method='peak'))
