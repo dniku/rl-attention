@@ -51,12 +51,13 @@ def weighted_k(input_tensor, k=2):
     x, y = np.shape(input_tensor)
     coordinates = [(a, b) for a in range(x) for b in range(y)]
     coordinates = np.array(coordinates)
-    k_mean = skl.KMeans(n_clusters=k)
+    k_mean = skl.KMeans(n_clusters=k, tol=1e-2, algorithm='elkan', n_init=2)
     input_tensor = np.reshape(input_tensor, [-1])
     means = k_mean.fit(coordinates, sample_weight=input_tensor).cluster_centers_
     return means
 
 
-# test_case = np.zeros((7, 7, 1))
-# print(test_case)
-# print(filter_k(test_case))
+# test_case = np.random.uniform(low=0, high=10, size=(7, 7, 32))
+# for i in range(100):
+#     print(i)
+#     filter_k(test_case)
