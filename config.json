@@ -1,14 +1,15 @@
 {
-  "env_name": "PongNoFrameskip-v4",
+  "env_name": "BreakoutNoFrameskip-v4",
   "time_steps": 10000000,
   "policy_type": "CnnPolicy",
   "network": "attention_cnn",
   "algo": "ppo2",
   "attn_loss": "attention_entropy",
-  "attn_coef": 0.1,
+  "attn_coef": 0.001,
   "train_time": 0,
   "train_seed": 0,
-  "log_dir": "tb",
+  "log_dir": "logs",
+  "tb_dir": "tb",
   "log_interval": 1,
   "enjoy": false
 }
