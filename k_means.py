@@ -37,7 +37,7 @@ def filter_k(input_tensor, grid=False, order_method='max', k=2):
             best_point = points[np.argmax(point_values)]
             peaks.append((i, best_point[0], best_point[1], centroid_value))
     return_values = sorted(peaks, key=lambda x: -x[3])
-    return return_values
+    return [(i[2],i[1],i[0]) for i in return_values[:2]]
 
 
 def weighted_k(testcase, k=2):
