@@ -21,6 +21,7 @@ def filter_k(input_tensor, order_method='max', k=2, top_x=2):
 
     Returns a list of tuples (y, x, filter_number) of length top_x, sorted by decreasing importance of peak.
     """
+    input_tensor[input_tensor == 0] = np.finfo(float).eps
 
     peaks = []
     centroids = []
@@ -52,11 +53,12 @@ def weighted_k(input_tensor, k=2):
     x, y = np.shape(input_tensor)
     coordinates = [(a, b) for a in range(x) for b in range(y)]
     coordinates = np.array(coordinates)
-    k_mean = skl.KMeans(n_clusters=k, algorithm="elkan")
+    k_mean = skl.KMeans(n_clusters=k)
     input_tensor = np.reshape(input_tensor, [-1])
     means = k_mean.fit(coordinates, sample_weight=input_tensor).cluster_centers_
     return means
 
 
-test_case = np.random.uniform(low=0, high=15, size=(7, 7, 32))
-print(filter_k(test_case))
+# test_case = np.zeros((7, 7, 1))
+# print(test_case)
+# print(filter_k(test_case))
