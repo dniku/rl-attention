@@ -6,10 +6,11 @@
   "algo": "ppo2",
   "attn_loss": "attention_entropy",
   "attn_coef": 0.001,
+  "normalize": false,
   "train_time": 0,
   "train_seed": 0,
   "log_dir": "logs",
   "tb_dir": "tb",
   "log_interval": 1,
-  "enjoy": false
+  "eval_seed": 1000
 }
