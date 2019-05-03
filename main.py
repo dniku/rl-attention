@@ -131,14 +131,6 @@ def main(cfg, run_dir):
         callback=Callback(output_dir),
     )
 
-    if cfg['enjoy']:
-        # Displaying gameplay
-        obs = env.reset()
-        while True:
-            action, _states = model.predict(obs)
-            obs, rewards, dones, info = env.step(action)
-            env.render()
-
 
 if __name__ == '__main__':
     logging.basicConfig(

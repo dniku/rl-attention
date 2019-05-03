@@ -10,6 +10,5 @@
   "train_seed": 0,
   "log_dir": "logs",
   "tb_dir": "tb",
-  "log_interval": 1,
-  "enjoy": false
+  "log_interval": 1
 }
