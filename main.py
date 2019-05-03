@@ -88,15 +88,20 @@ def main(cfg, run_dir):
     set_global_seeds(cfg['train_seed'])
 
     logging.info('Running {algo}'.format(**cfg))
-    model = get_algo(cfg['algo'])(
-        policy=cfg['policy_type'],
+
+    algo = get_algo(cfg['algo'])
+    policy = cfg['policy_type']
+    feature_extractor = get_network_builder(cfg['network'])
+    attn_loss = get_loss(cfg['attn_loss'])()
+    model = algo(
+        policy=policy,
         env=env,
         verbose=1,
         learning_rate=lambda frac: 0.00025 * frac,
-        attn_loss=get_loss(cfg['attn_loss'])(),
+        attn_loss=attn_loss,
         attn_coef=cfg['attn_coef'],
         policy_kwargs={
-            'cnn_extractor': get_network_builder(cfg['network'])
+            'cnn_extractor': feature_extractor,
         },
         tensorboard_log=str(tensorboard_dir),
     )
