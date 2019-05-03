@@ -31,7 +31,7 @@ def filter_k(input_tensor, order_method='max', k=2, top_x=2, top_f=8, method='pe
     top_f_filters = np.argpartition(max_relevance_magnitude_by_filter, -top_f)[-top_f:]
     
     if input_tensor.shape[0] == 1: # for 1x1 filters, don't bother running peak detection
-        centroids = [[0, 0]] * top_f
+        centroids = [[[0, 0]]] * top_f
     else:
         for filter_n in top_f_filters:
             if method == 'peak':
