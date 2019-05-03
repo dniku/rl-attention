@@ -6,6 +6,7 @@
   "algo": "ppo2",
   "attn_loss": "attention_entropy",
   "attn_coef": 0.001,
+  "normalize": false,
   "train_time": 0,
   "train_seed": 0,
   "log_dir": "logs",

@@ -102,7 +102,8 @@ def main(cfg, run_dir):
     logging.info('Starting {env_name}'.format(**cfg))
     env = make_atari_env(env_id=cfg['env_name'], num_env=8, seed=cfg['train_seed'])
     env = VecFrameStack(env, n_stack=4)
-    env = VecNormalize(env)
+    if cfg['normalize']:
+        env = VecNormalize(env)
 
     # Setting all known random seeds (Python, Numpy, TF, Gym if available)
     set_global_seeds(cfg['train_seed'])
