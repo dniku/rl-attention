@@ -78,3 +78,9 @@ dd{margin-left:2em;margin-bottom:1em;}
   margin-right: auto;
   width: 50%;
 }
+.archi {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 90%;
+}
