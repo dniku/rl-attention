@@ -11,5 +11,6 @@
   "train_seed": 0,
   "log_dir": "logs",
   "tb_dir": "tb",
-  "log_interval": 1
+  "log_interval": 1,
+  "eval_seed": 1000
 }

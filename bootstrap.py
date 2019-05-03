@@ -5,6 +5,7 @@ import string
 import subprocess
 import sys
 from pathlib import Path
+import warnings
 
 
 def run(cmd: str):
@@ -56,11 +57,6 @@ def setup_serveo(alias=None, ssh_keys=None, suppress_host_checking=True, forward
                 '-o', 'StrictHostKeyChecking=no',
                 '-o', 'UserKnownHostsFile=/dev/null',
             ])
-        if forward_ports:
-            for port in forward_ports:
-                command.extend([
-                    '-L', '{port}:localhost:{port}'.format(port=port)
-                ])
         command.extend([
             '-o', 'ProxyJump=serveo.net',
             'root@' + cfg['alias']
@@ -105,11 +101,29 @@ def setup_serveo(alias=None, ssh_keys=None, suppress_host_checking=True, forward
     # Create tunnel
     if alias is None:
         alias = ''.join(random.choice(string.ascii_lowercase) for _ in range(8))
-    run(
-        'autossh -f -M 0 ' +
-        '-o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=no ' +
-        '-R {}:22:localhost:22 serveo.net'.format(alias)
-    )
+
+    if forward_ports is None:
+        forward_ports = []
+    if len(forward_ports) > 2:
+        warnings.warn('Free Serveo plan supports up to 3 ports, but {num} were provided: {ports}'.format(
+            num=len(forward_ports) + 1,
+            ports=[22] + forward_ports,
+        ))
+
+    ssh_command = [
+        'autossh',
+        '-f',  # run in background
+        '-M', '0',  # disable connectivity check from autossh
+        '-o', 'ServerAliveInterval=30', '-o', 'ServerAliveCountMax=3',  # use standard ssh connectivity check
+        '-o', 'StrictHostKeyChecking=no',  # do not ask for confirmation when connecting to serveo for the first time
+        '-R', '{alias}:22:localhost:22'.format(alias=alias),  # forward ssh port
+    ]
+    for port in forward_ports:
+        ssh_command.extend([
+            '-R', '{alias}:{port}:localhost:{port}'.format(alias=alias, port=port),
+        ])
+    ssh_command.extend(['serveo.net'])
+    subprocess.check_call(ssh_command)
 
     with open('serveo.json', 'w') as fp:
         json.dump({
