@@ -29,15 +29,6 @@ except ImportError:
         )
 
 
-def set_model_seed(model, seed):
-    if hasattr(model.env, 'seed'):
-        model.env.seed(seed)
-    else:
-        model.env.env_method("seed", seed)
-
-    return model
-
-
 class Callback(object):
     def __init__(self, output_dir):
         self.output_dir = output_dir
