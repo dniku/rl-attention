@@ -27,15 +27,18 @@ def filter_k(input_tensor, order_method='max', k=2, top_x=2, top_f=8, method='pe
     centroids = []
     
     max_relevance_magnitude_by_filter = np.max(input_tensor, axis=(0, 1))
-    #top_f = min(top_f, input_tensor.shape[2])
-    #top_f_filters = np.argpartition(max_relevance_magnitude_by_filter, -top_f)[-top_f:]
-   
-    for filter_n in range(input_tensor.shape[2]): #top_f_filters:
-        if method == 'peak':
-            centroids.append(ski.peak_local_max(input_tensor[..., filter_n], num_peaks=k, min_distance=0))
-        else:
-            input_tensor[input_tensor == 0] = np.finfo(float).eps
-            centroids.append(weighted_k(input_tensor[..., filter_n], k=k))
+    top_f = min(top_f, input_tensor.shape[2])
+    top_f_filters = np.argpartition(max_relevance_magnitude_by_filter, -top_f)[-top_f:]
+    
+    if input_tensor.shape[0] == 1: # for 1x1 filters, don't bother running peak detection
+        centroids = [[0, 0]] * top_f
+    else:
+        for filter_n in top_f_filters:
+            if method == 'peak':
+                centroids.append(ski.peak_local_max(input_tensor[..., filter_n], num_peaks=k, min_distance=0))
+            else:
+                input_tensor[input_tensor == 0] = np.finfo(float).eps
+                centroids.append(weighted_k(input_tensor[..., filter_n], k=k))
 
     for i in range(len(centroids)):
         for j in centroids[i]:
