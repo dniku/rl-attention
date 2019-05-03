@@ -27,8 +27,8 @@
 <p>In this architecture, the agent is not forced to choose one or even a limited number of parts of the image to focus its attention. In fact it can pass a very diffuse attention tensor and therefore pass all information from the convolutional network to the decision-making layers.</p> 
 <p>To incentivise informative results from the attention layer in our architecture we added an extra term in the loss function based on the entropy of the final activations of the attention tensor.</p>
 <p>[Image of our attention layer being generated from the input with attn penalty.] Here we can see the way in which the attention filters the results, allowing us to see the focus of the model more clearly.</p>
-<p>The formula below shows the calculation of the attention loss $L$ from the final attention layer of shape $7\times 7\times 2$.</p>
-<p>$$A_1,A_2\in R^{7\times7},\\ \sum A_{i,j} = 1$$</p>
+<p>The formula below shows the calculation of the attention loss $L$ with coefficient $c$ from the final attention layer $A$ of shape $7\times 7\times 2$.</p>
+<p>$$A^1,A^2\in R^{7\times7}\break \sum A_{i,j} = 1$$</p>
 <p>$$L = c \cdot \sum_A -A_{i,j}\log A_{i,j}$$</p>
 <p>We ran a number of experiments with different coefficients for the attention loss, settling on a value between 1e-2 and 1e-3 as the region of interest.</p>
 <p>Our results show that at 1e-3 the performance does not seem to be at all reduced but reduced entropy is only weakly incentivized. At 5e-3 entropy of the attention activation is strongly reducd but also reduces performance, with the exception of one run which performed as well as the unregularized models.</p>
@@ -36,7 +36,9 @@
 <img src="images/scatter.png" alt="Scatter plot of score at 10M steps, attention loss" class="center"/>
 <p class="caption">Scatter plot of score at 10M steps, attention loss</p>
 </div>
-<p>Here we see a visualisation of the activations of the attention layer with and without our entropy penalty applied.</p>
+<p align="center">
+<b>Activation of the final attention layer plotted over the input frames for models trained with attention coefficient of 0 (Left) and 0.005 (Right)</b>
+</p>
 <figure class="video_container">
 <video controls="true" allowfullscreen="true", width="350"> <source src="images/a2_no_attn_loss.mp4" type="video/webm"> </video> <video controls="true" allowfullscreen="true", width="350"> <source src="images/a2_attn_loss.mp4" type="video/webm"> </video>
 </figure>
@@ -71,3 +73,4 @@ We started to use Simonyan gradient<a href="#fn2" class="footnoteRef" id="fnref2
 </div>
 </body>
 </html>
+
