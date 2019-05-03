@@ -1,5 +1,6 @@
 import tensorflow as tf
-from stable_baselines.common.tf_util import make_session
+
+from utils import get_session
 
 mapping = {}
 
@@ -26,14 +27,10 @@ def entropy_2d(probs):
 @register
 def attention_entropy():
     def return_tensor():
-        sess = tf.get_default_session()
-        if sess is None:
-            sess = make_session()
-        attn = sess.graph.get_tensor_by_name('train_model/model/attn:0')
+        attn = get_session().graph.get_tensor_by_name('train_model/model/attn:0')
         attn_entropy = entropy_2d(attn)
         attn_entropy = tf.reduce_sum(attn_entropy, axis=-1)
         attn_entropy = tf.reduce_mean(attn_entropy)
         return attn_entropy
+
     return return_tensor
-
-

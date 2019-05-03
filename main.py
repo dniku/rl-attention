@@ -6,13 +6,13 @@ from datetime import datetime
 from pathlib import Path
 
 import tensorflow as tf
-from stable_baselines import A2C, ACER, ACKTR, DQN, DDPG, PPO1, PPO2, SAC, TRPO
 from stable_baselines.common.cmd_util import make_atari_env
 from stable_baselines.common.vec_env import VecFrameStack
 from stable_baselines.common.vec_env import VecNormalize
 from stable_baselines.logger import configure
 from tqdm.auto import tqdm
 
+from algos import get_algo
 from losses import get_loss
 from models import get_network_builder
 
@@ -38,18 +38,6 @@ def set_model_seed(model, seed):
     return model
 
 
-# All available training algorithms
-ALGOS_DICT = {
-    'a2c': A2C,
-    'acer': ACER,
-    'acktr': ACKTR,
-    'dqn': DQN,
-    'ddpg': DDPG,
-    'ppo1': PPO1,
-    'ppo2': PPO2,
-    'sac': SAC,
-    'trpo': TRPO,
-}
 class Callback(object):
     def __init__(self, output_dir):
         self.output_dir = output_dir
@@ -102,13 +90,14 @@ def main(cfg, run_dir):
     logging.info('Starting {env_name}'.format(**cfg))
     env = make_atari_env(env_id=cfg['env_name'], num_env=8, seed=cfg['train_seed'])
     env = VecFrameStack(env, n_stack=4)
-    env = VecNormalize(env)
+    if cfg['normalize']:
+        env = VecNormalize(env)
 
     # Setting all known random seeds (Python, Numpy, TF, Gym if available)
     set_global_seeds(cfg['train_seed'])
 
     logging.info('Running {algo}'.format(**cfg))
-    model = ALGOS_DICT[cfg['algo']](
+    model = get_algo(cfg['algo'])(
         policy=cfg['policy_type'],
         env=env,
         verbose=1,
@@ -130,14 +119,6 @@ def main(cfg, run_dir):
         tb_log_name=None,
         callback=Callback(output_dir),
     )
-
-    if cfg['enjoy']:
-        # Displaying gameplay
-        obs = env.reset()
-        while True:
-            action, _states = model.predict(obs)
-            obs, rewards, dones, info = env.step(action)
-            env.render()
 
 
 if __name__ == '__main__':
