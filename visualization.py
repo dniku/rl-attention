@@ -40,7 +40,7 @@ def render_attn(attention: List[np.ndarray], kernel_size: int, stride: int, padd
     result = []
     sess = get_session()
 
-    for attn in tqdm(attention, desc='rendering attn'):
+    for attn in tqdm(attention, postfix='rendering attn', ncols=76):
         batchwise_results = sess.run(batchwise_ops, {input_ph: attn})
 
         rendered_attn = np.empty((
