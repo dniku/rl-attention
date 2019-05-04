@@ -1,5 +1,5 @@
 <html>
-  <script type="text/x-mathjax-config">
+<script type="text/x-mathjax-config">
   MathJax.Hub.Config({
     tex2jax: {
       inlineMath: [ ['$','$'], ["\\(","\\)"] ],
@@ -18,12 +18,12 @@
 <h3 id="attention-regularization">Attention Regularization</h3>
 <h4 id="background">Background</h4>
 <p>We began our project as part of AI Safety Camp 3, trying to better understand the decision making processes used by RL agents. These methods can be split into <em>ante hoc</em> and <em>post hoc</em> - whether they are applied during the training of the agent or applied to an agent after training. In the former approach, one may add an attention layer to the architecture to force the model to focus spatially. The latter includes techniques such as gradient based saliency.</p>
-<p>We began by aiming to combine these methods in a way that suited reinforcement learners, which we hoped would be especially fertile because the majority of the work in this space has focussed on image classifiers.</p>
-<p>Building on D. Nikulin's experience in attention in reinforcement learners, our initial goal was to train a reinforcement learning agent with an attention layer, and then apply regularization to the activation of the attention layer to promote more meaningful attention maps. We started with the work of Zhao et al<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> who used an architecture based on Deepmind's Rainbow with the addition of two attention layers which are used to filter the output coming from the last convolutional layer.</p>
-<p>We recreated the bones of this architecture in TensorFlow using the stable-baselines package, using PPO2 but not all of the features of Rainbow.</p>
-<p>Our initial experiments fonud that adding the attention layers to the PPO2 architecture made no noticeable change in its performance.</p>
-<h4 id="penalizing attention">Pentalizing Diffuse Attention</h4>
-<p>In this architecture, the agent is not forced to choose one or even a limited number of parts of the image to focus its attention. In fact, it can pass a very diffuse attention tensor and therefore pass all information from the convolutional network to the decision-making layers.</p> 
+<p>We began by aiming to combine these methods in a way that suited reinforcement learners, which we hoped would be especially fertile because the majority of the work in this space has focused on image classifiers.</p>
+<p>Our initial goal was to train a reinforcement learning agent with an attention layer, and then apply regularization to the activation of the attention layer to promote more meaningful attention maps. We started with the work of Zhao et al<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> who used an implementation based on Rainbow with a standard neural network architecture equipped with two attention layers used to filter the output coming from the last convolutional layer.</p>
+<p>We recreated the bones of this architecture in TensorFlow using the stable-baselines package. We chose it because it is a fork of an established library, OpenAI Baselines, that intends to improve on the upstream's code style and documentation completeness. However, due to the lack of Rainbow in Baselines, we used PPO as a state-of-the-art algorithm that available from the library.</p>
+<p>Our initial experiments found that adding the attention layers to the baseline architecture made no noticeable change in its performance.</p>
+<h4 id="penalizing attention">Penalizing Diffuse Attention</h4>
+<p>In this architecture, the agent is not forced to choose one or even a limited number of parts of the image to focus its attention. In fact, it can pass a very diffuse attention tensor and therefore pass all information from the convolutional network to the decision-making layers.</p>
 <p>To incentivise informative results from the attention layer in our architecture we added an extra term in the loss function.</p>
 <p>We considered other forms for this loss, including the divergence from a sum-of-Gaussians, but settled on using the entropy of the final activations of the attention tensor as the basis for our loss term.</p>
 <p align="center">
