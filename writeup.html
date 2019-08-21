@@ -1,5 +1,5 @@
 <html>
-  <script type="text/x-mathjax-config">
+<script type="text/x-mathjax-config">
   MathJax.Hub.Config({
     tex2jax: {
       inlineMath: [ ['$','$'], ["\\(","\\)"] ],
@@ -18,17 +18,22 @@
 <h3 id="attention-regularization">Attention Regularization</h3>
 <h4 id="background">Background</h4>
 <p>We began our project as part of AI Safety Camp 3, trying to better understand the decision making processes used by RL agents. These methods can be split into <em>ante hoc</em> and <em>post hoc</em> - whether they are applied during the training of the agent or applied to an agent after training. In the former approach, one may add an attention layer to the architecture to force the model to focus spatially. The latter includes techniques such as gradient based saliency.</p>
-<p>We began by aiming to combine these methods in a way that suited reinforcement learners, which we hoped would be especially fertile because the majority of the work in this space has focussed on image classifiers.</p>
-<p>Building on D. Nikulin's experience in attention in reinforcement learners, our initial goal was to train a reinforcement learning agent with an attention layer, and then apply regularization to the activation of the attention layer to promote more meaningful attention maps. We started with the work of Zhao et al<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> who used an architecture based on Deepmind's Rainbow with the addition of two attention layers which are used to filter the output coming from the last convolutional layer.</p>
-<p>We recreated the bones of this architecture in TensorFlow using the stable-baselines package, using PPO2 but not all of the features of Rainbow.</p>
-<p>Our initial experiments fonud that adding the attention layers to the PPO2 architecture made no noticeable change in its performance.</p>
-<h4 id="penalizing attention">Pentalizing Diffuse Attention</h4>
-<p>[Image of our architecture]</p>
-<p>In this architecture, the agent is not forced to choose one or even a limited number of parts of the image to focus its attention. In fact it can pass a very diffuse attention tensor and therefore pass all information from the convolutional network to the decision-making layers.</p> 
-<p>To incentivise informative results from the attention layer in our architecture we added an extra term in the loss function based on the entropy of the final activations of the attention tensor.</p>
-<p>[Image of our attention layer being generated from the input with attn penalty.] Here we can see the way in which the attention filters the results, allowing us to see the focus of the model more clearly.</p>
-<p>The formula below shows the calculation of the attention loss $L$ from the final attention layer of shape $7\times 7\times 2$.</p>
-<p>$$A_1,A_2\in R^{7\times7},\\ \sum A_{i,j} = 1$$</p>
+<p>We began by aiming to combine these methods in a way that suited reinforcement learners, which we hoped would be especially fertile because the majority of the work in this space has focused on image classifiers.</p>
+<p>Our initial goal was to train a reinforcement learning agent with an attention layer, and then apply regularization to the activation of the attention layer to promote more meaningful attention maps. We started with the work of Zhao et al<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> who used an implementation based on Rainbow with a standard neural network architecture equipped with two attention layers used to filter the output coming from the last convolutional layer.</p>
+<p>We recreated the bones of this architecture in TensorFlow using the stable-baselines package. We chose it because it is a fork of an established library, OpenAI Baselines, that intends to improve on the upstream's code style and documentation completeness. However, due to the lack of Rainbow in Baselines, we used PPO as a state-of-the-art algorithm that available from the library.</p>
+<p>Our initial experiments found that adding the attention layers to the baseline architecture made no noticeable change in its performance.</p>
+<h4 id="penalizing attention">Penalizing Diffuse Attention</h4>
+<p>In this architecture, the agent is not forced to choose one or even a limited number of parts of the image to focus its attention. In fact, it can pass a very diffuse attention tensor and therefore pass all information from the convolutional network to the decision-making layers.</p>
+<p>To incentivise informative results from the attention layer in our architecture we added an extra term in the loss function.</p>
+<p>We considered other forms for this loss, including the divergence from a sum-of-Gaussians, but settled on using the entropy of the final activations of the attention tensor as the basis for our loss term.</p>
+<p align="center">
+<b>Diagram of our architecture, showing the attenion layer. Adapted from Zhao et al.</b>
+</p>
+<p><img src="images/architecture.png" class="archi" alt="Diagram of the architecture used in our models." width="600"/></p>
+<p>Here we can see the way in which the attention filters the results, allowing us to see the focus of the model more clearly.</p>
+<p>The formula below shows the calculation of the attention loss $L$ with coefficient $c$ from the final attention layer $A$ of shape $7\times 7\times 2$.</p>
+<p>$$A^1,A^2\in R^{7\times7}$$</p>
+<p>$$\sum A_{i,j} = 1$$</p>
 <p>$$L = c \cdot \sum_A -A_{i,j}\log A_{i,j}$$</p>
 <p>We ran a number of experiments with different coefficients for the attention loss, settling on a value between 1e-2 and 1e-3 as the region of interest.</p>
 <p>Our results show that at 1e-3 the performance does not seem to be at all reduced but reduced entropy is only weakly incentivized. At 5e-3 entropy of the attention activation is strongly reducd but also reduces performance, with the exception of one run which performed as well as the unregularized models.</p>
@@ -36,11 +41,12 @@
 <img src="images/scatter.png" alt="Scatter plot of score at 10M steps, attention loss" class="center"/>
 <p class="caption">Scatter plot of score at 10M steps, attention loss</p>
 </div>
-<p>Here we see a visualisation of the activations of the attention layer with and without our entropy penalty applied.</p>
+<p align="center">
+<b>Activation of the final attention layer plotted over the input frames for models trained with attention coefficient of 0 (Left) and 0.005 (Right)</b>
+</p>
 <figure class="video_container">
 <video controls="true" allowfullscreen="true", width="350"> <source src="images/a2_no_attn_loss.mp4" type="video/webm"> </video> <video controls="true" allowfullscreen="true", width="350"> <source src="images/a2_attn_loss.mp4" type="video/webm"> </video>
 </figure>
-<p>[Video of the map with attention entropy penalty]</p>
 <h3 id="beyond-heatmaps">Beyond Heatmaps</h3>
 <p>While we were doing this we also started to think about ways in which we could better visualise the structure of the RL agent.</p>
 <p>The argument for the importance of our work requires the following:</p>
@@ -71,3 +77,4 @@ We started to use Simonyan gradient<a href="#fn2" class="footnoteRef" id="fnref2
 </div>
 </body>
 </html>
+

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <title>Attention Visualization</title>
+    
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <script type="text/javascript"> 
+    //  TODO Fix bug that graph is not updated when a new screen is loaded
+
+    // Data
+    d3.json("screens.json").then(function(screens) {
+        d3.json("trees.json").then(function(trees) {
+
+            var screen = 0,
+                n_screens = screens.length;
+
+            // Game SVG
+            var scale = 4,
+                margin = {top: 20, right: 20, bottom: 20, left: 20},
+                width = 84 * scale,
+                height = 84 * scale;
+
+            const svgGame = d3.select("body")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            svgGame.on("click", function(d) {
+                var increment = d3.event.altKey ? -1 : 1;
+                screen = screen + increment;
+                if (screen < 0) {
+                    screen = n_screens - 1;
+                }
+                screen = screen % n_screens;
+                updateScreen();
+            });
+
+            const gBackground = svgGame.append("g")
+                .attr("shape-rendering", "crispEdges");
+            
+            const colorScale = d3.scaleLinear()
+                .domain([0, 255])
+                .range(["black", "white"]);
+            
+            const gAttention = svgGame.append("g");
+            
+            // Tree SVG
+            var width = 600,
+                dx = 15,
+                dy = width / 6,
+                margin = ({top: 10, right: 70, bottom: 10, left: 50});
+
+            const svg = d3.selectAll("body")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", dx)
+                .attr("viewBox", [-margin.left, -margin.top, width + margin.right, dx])
+                .style("font", "14px sans-serif")
+                .style("user-select", "none");
+
+            const gLink = svg.append("g")
+                .attr("fill", "none")
+                .attr("stroke", "#555")
+                .attr("stroke-opacity", 0.4)
+                .attr("stroke-width", 1.5);
+
+            const gNode = svg.append("g")
+                .attr("cursor", "pointer");
+
+            var tree,
+                diagonal,
+                root;
+
+
+            function updateScreen(){
+
+                // Update background
+                gBackground.selectAll("rect").remove();
+
+                gBackground.selectAll("rect")
+                    .data(screens[screen])
+                    .enter()
+                    .append("rect")
+                    .attr("x", function(d) { return d.x * scale })
+                    .attr("y", function(d) { return d.y * scale })
+                    .attr("width", scale)
+                    .attr("height", scale)
+                    .style("fill", function(d) { return colorScale(d.value) });
+
+                // Update tree
+                data = trees[screen];
+                tree = d3.tree().nodeSize([dx, dy]); 
+                diagonal = d3.linkHorizontal().x(d => d.y).y(d => d.x);
+                root = d3.hierarchy(data);
+
+                root.x0 = dy / 2;
+                root.y0 = 0;
+                root.descendants().forEach((d, i) => {
+                    d.id = i;
+                    d._children = d.children;
+                    // d.children = null;  // Uncomment to start with collapsed tree
+                });
+
+                update(root);
+            };
+
+
+            // Update tree diagram and attention map
+            function update(source) {
+                
+                // Collapsible tree diagram (based on https://observablehq.com/@d3/collapsible-tree)
+                const duration = d3.event && d3.event.altKey ? 2500 : 250;
+                const nodes = root.descendants().reverse();
+                const links = root.links();
+
+                // Compute new tree layout
+                tree(root);
+
+                let left = root;
+                let right = root;
+                root.eachBefore(node => {
+                    if (node.x < left.x) left = node;
+                    if (node.x > right.x) right = node;
+                });
+
+                const height = right.x - left.x + margin.top + margin.bottom;
+
+                const transition = svg.transition()
+                    .duration(duration)
+                    .attr("height", height)
+                    .attr("viewBox", [-margin.left, left.x - margin.top, width + margin.right, height])
+                    .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
+
+                // Update the nodes
+                const node = gNode.selectAll("g")
+                    .data(nodes, d => d.id);
+
+                // Enter any new nodes at the parent's previous position
+                const nodeEnter = node.enter().append("g")
+                    .attr("transform", d => `translate(${source.y0},${source.x0})`)
+                    .attr("fill-opacity", 0)
+                    .attr("stroke-opacity", 0)
+                    .on("click", d => {
+                        d.children = d.children ? null : d._children;
+                        update(d);
+                    });
+
+                nodeEnter.append("circle")
+                    .attr("r", 5)
+                    .attr("fill", d => d._children ? "#555" : "#999");
+
+                nodeEnter.append("text")
+                    .attr("dy", "0.31em")
+                    .attr("x", d => d._children ? -7 : 7)
+                    .attr("text-anchor", d => d._children ? "end" : "start")
+                    .text(d => d.data.name);
+
+                // Transition nodes to their new position
+                const nodeUpdate = node.merge(nodeEnter).transition(transition)
+                    .attr("transform", d => `translate(${d.y},${d.x})`)
+                    .attr("fill-opacity", 1)
+                    .attr("stroke-opacity", 1);
+
+                // Transition exiting nodes to the parent's new position
+                const nodeExit = node.exit().transition(transition).remove()
+                    .attr("transform", d => `translate(${source.y},${source.x})`)
+                    .attr("fill-opacity", 0)
+                    .attr("stroke-opacity", 0);
+
+                // Update the links
+                const link = gLink.selectAll("path")
+                    .data(links, d => d.target.id);
+
+                // Enter any new links at the parent's previous position
+                const linkEnter = link.enter().append("path")
+                    .attr("d", d => {
+                        const o = {x: source.x0, y: source.y0};
+                        return diagonal({source: o, target: o});
+                    });
+
+                // Transition links to their new position
+                link.merge(linkEnter).transition(transition)
+                    .attr("d", diagonal);
+
+                // Transition exiting nodes to the parent's new position
+                link.exit().transition(transition).remove()
+                    .attr("d", d => {
+                        const o = {x: source.x, y: source.y};
+                        return diagonal({source: o, target: o});
+                    });
+
+                // Stash the old positions for transition
+                root.eachBefore(d => {
+                    d.x0 = d.x;
+                    d.y0 = d.y;
+                });
+
+                // Update the attention squares
+                gAttention.selectAll("rect").remove()
+
+                root.descendants().forEach((d, i) => {
+
+                    size = d.data['square'][2] * scale;
+                    y = d.data['square'][0] * scale- size/2;
+                    x = d.data['square'][1] * scale - size/2;
+
+                    var squareColor = d.data['color'];
+
+                    square = gAttention.append("rect")
+                        .attr("x", x)
+                        .attr("y", y)
+                        .attr("width", size)
+                        .attr("height", size)
+                        .attr("fill", squareColor)
+                        .attr("fill-opacity", 0.02)
+                        .attr("stroke", squareColor)
+                        .attr("stroke-opacity", 0.5);
+
+                    
+                    square
+                        .on("mouseover", function(d) {
+                            d3.select(this)
+                                .transition()
+                                .duration(100)
+                                .style("fill-opacity", 0.2)
+                                .style("stroke-opacity", 1);
+                        })
+                        .on("mouseout", function(d) {
+                            d3.select(this)
+                                .transition()
+                                .duration(100)
+                                .style("fill-opacity", 0.02)
+                                .style("stroke-opacity", 0.5);
+                        });
+
+                });
+            };
+
+            updateScreen();
+
+        });
+    });
+
+    </script>
+  </body>
+</html>
