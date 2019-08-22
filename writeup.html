@@ -1,80 +1,83 @@
-<html>
-<script type="text/x-mathjax-config">
-  MathJax.Hub.Config({
-    tex2jax: {
-      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-      processEscapes: true
-    }
-  });
-</script>
-<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-  <link rel="stylesheet" href="writeup.css">
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Interpretability in Reinforcement Learning Agents</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="./writeup.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
 </head>
 <body>
-<h1 id="interpretability-in-reinforcement-learning-agents">Interpretability in Reinforcement Learning Agents</h1>
-<p><em>Dmitry Nikulin, Sebastian Kosch, Fabian Steuer, Hoagy Cunningham</em></p>
-<p><a href="https://github.com/Pastafarianist/rl-attention">Github Repository</a></p>
-<h3 id="attention-regularization">Attention Regularization</h3>
-<h4 id="background">Background</h4>
-<p>We began our project as part of AI Safety Camp 3, trying to better understand the decision making processes used by RL agents. These methods can be split into <em>ante hoc</em> and <em>post hoc</em> - whether they are applied during the training of the agent or applied to an agent after training. In the former approach, one may add an attention layer to the architecture to force the model to focus spatially. The latter includes techniques such as gradient based saliency.</p>
-<p>We began by aiming to combine these methods in a way that suited reinforcement learners, which we hoped would be especially fertile because the majority of the work in this space has focused on image classifiers.</p>
-<p>Our initial goal was to train a reinforcement learning agent with an attention layer, and then apply regularization to the activation of the attention layer to promote more meaningful attention maps. We started with the work of Zhao et al<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> who used an implementation based on Rainbow with a standard neural network architecture equipped with two attention layers used to filter the output coming from the last convolutional layer.</p>
-<p>We recreated the bones of this architecture in TensorFlow using the stable-baselines package. We chose it because it is a fork of an established library, OpenAI Baselines, that intends to improve on the upstream's code style and documentation completeness. However, due to the lack of Rainbow in Baselines, we used PPO as a state-of-the-art algorithm that available from the library.</p>
-<p>Our initial experiments found that adding the attention layers to the baseline architecture made no noticeable change in its performance.</p>
-<h4 id="penalizing attention">Penalizing Diffuse Attention</h4>
-<p>In this architecture, the agent is not forced to choose one or even a limited number of parts of the image to focus its attention. In fact, it can pass a very diffuse attention tensor and therefore pass all information from the convolutional network to the decision-making layers.</p>
-<p>To incentivise informative results from the attention layer in our architecture we added an extra term in the loss function.</p>
-<p>We considered other forms for this loss, including the divergence from a sum-of-Gaussians, but settled on using the entropy of the final activations of the attention tensor as the basis for our loss term.</p>
-<p align="center">
-<b>Diagram of our architecture, showing the attenion layer. Adapted from Zhao et al.</b>
+<h1 id="regularization-and-visualization-of-attention-in-reinforcement-learning-agents">Regularization and visualization of attention in reinforcement learning agents</h1>
+<p>Dmitry Nikulin, Sebastian Kosch, Fabian Steuer, Hoagy Cunningham</p>
+<p>
+<a href="https://github.com/dniku/rl-attention">Github Repository</a>
 </p>
-<p><img src="images/architecture.png" class="archi" alt="Diagram of the architecture used in our models." width="600"/></p>
-<p>Here we can see the way in which the attention filters the results, allowing us to see the focus of the model more clearly.</p>
-<p>The formula below shows the calculation of the attention loss $L$ with coefficient $c$ from the final attention layer $A$ of shape $7\times 7\times 2$.</p>
-<p>$$A^1,A^2\in R^{7\times7}$$</p>
-<p>$$\sum A_{i,j} = 1$$</p>
-<p>$$L = c \cdot \sum_A -A_{i,j}\log A_{i,j}$$</p>
-<p>We ran a number of experiments with different coefficients for the attention loss, settling on a value between 1e-2 and 1e-3 as the region of interest.</p>
-<p>Our results show that at 1e-3 the performance does not seem to be at all reduced but reduced entropy is only weakly incentivized. At 5e-3 entropy of the attention activation is strongly reducd but also reduces performance, with the exception of one run which performed as well as the unregularized models.</p>
+<p><em>This project was completed during AI Safety Camp 3 in Ávila, Spain, in May 2019. The goal was to familiarize ourselves with the state of the art in visualizing machine learning models, particularly in an reinforcement learning context, and to test possible improvements.</em></p>
+<h2 id="introduction">Introduction</h2>
+<p>Advances in deep learning are enabling reinforcement learning (RL) agents to accomplish increasingly difficult tasks. For instance, relatively simple machine learning agents can learn how to beat humans in video games, without ever having been programmed how to do so. However, agents sometimes learn to make correct decisions for the wrong reasons, which can lead to surprising and perplexing failures later. In order to diagnose such problems effectively, the developer needs to understand how information flows through the artificial neural network that powers the agent’s decision-making process.</p>
+<p>To date, most of the research on this topic has focused on image classification tasks instead of RL. As a result, most proposed methods output a heatmap highlighting those pixels of the input image that are most responsible for the inferred label. For instance, given a photograph of a dog in a meadow that was correctly classfied as “dog”, a visualization of those pixels the network considers most dog-like provides a check on whether the network has truly learned the concept of dogs, or whether it merely made a lucky guess based on the presence of the meadow.</p>
+<p>To some extent, such methods can be repurposed for the analysis of RL agents playing video games, since the RL infers actions (labels) from images (render frames). However, the resulting heatmaps are often blurry or noisy. Furthermore, image classifiers simply detect objects, while RL agents must choose actions based on complex relationships between entities detected in the input. A simple heatmap visualization cannot convey whether and where such relationships were detected.</p>
+<p>In this paper, we present two potential improvements to existing visualization approaches in RL, and report on our experimental findings regarding their performance on the Atari Breakout game.</p>
+<h2 id="attention-in-rl-agents">Attention in RL agents</h2>
+<p>In 2016, Zhao et al. explored the effects of adding two <em>attention layers</em> to the decision-making network of an agent learning to play Breakout and other games. The attention layers, applied after some convolutional layers which detect basic game entities, restrict the input to the agent’s action selection mechanism to a subset of the input pixels (the <em>attention mask</em>). In effect, the agent’s model is forced to focus spatially. Adding such a bottleneck can improve training times, but more importantly, the attention layer activations provide a direct clue about what the model is focusing on. This directness is attractive when compared to <em>post-hoc</em> methods, which require additional computation to reason about the relevance of network activations after inference.</p>
+<p>
+<img src="images/architecture.png" class="archi" alt="Diagram of the architecture used in our models." width="600"/>
+</p>
+<p>Note that there is no direct correspondence between activated attention layer neurons and relevant input pixels. This is due to the convolutional downsampling layers that separate the input image from the attention layers. However, we can generate a heatmap by backpropagating the attention tensor through the network. Several different approaches exist to accomplish this, from Simonyan et al.’s gradient method to the more recent VarGrad and SmoothGrad sampling methods.</p>
+<p>Zhao et al. used the former, a basic gradient method, to visualize the attention mask corresponding to their agent’s attention layer activations. Their findings confirm that in trained agents, the attention tends to be strong near crucial entities in the game, i.e. the Pacman sprite or the moving ball in Breakout. However, the attention mask heatmaps are noisy and not very informative.</p>
+<h2 id="adding-regularization-to-sharpen-the-attention-masks">Adding regularization to sharpen the attention masks</h2>
+<p>The effectiveness of attention layers depends crucially on how the attention is constrained. This is especially true because of the downsampling action of the convolutional layers in Zhao et al.’s architecture: a diffuse attention tensor will effectively correspond to all input pixels, defeating the purpose of the attention layer.</p>
+<p>To incentivize more informative heatmaps than those obtained by Zhao et al., we added an extra loss term to represent the diffuseness of the attention tensor. Several such measures exist; we settled on using the entropy of the final attention layer.</p>
+<p>[explanation of the math]</p>
+<p>Although attention mechanisms have been shown to improve training times, excessively strong regularization will naturally prevent the agent from taking into account complex relationships between spatially distant entities, and thus degrade performance. We ran a suite of experiments to quantify the impact of entropy regularization on the agent’s performance at playing Breakout.</p>
+<h3 id="experimental-results">Experimental Results</h3>
+<p>We recreated the agent by Zhao et al. in TensorFlow using the <code>stable-baselines</code> package, a fork of OpenAI’s <code>baselines</code> package with improved code style and documentation. Since <code>stable-baselines</code> does not include all features of the Rainbow training architecture, we used PPO as a state-of-the-art algorithm available in the library.</p>
+<p>Our initial experiments found that adding the attention layers to the baseline architecture made no noticeable change in its performance.</p>
 <div class="figure">
 <img src="images/scatter.png" alt="Scatter plot of score at 10M steps, attention loss" class="center"/>
-<p class="caption">Scatter plot of score at 10M steps, attention loss</p>
-</div>
-<p align="center">
-<b>Activation of the final attention layer plotted over the input frames for models trained with attention coefficient of 0 (Left) and 0.005 (Right)</b>
+<p class="caption">
+Scatter plot of score at 10M steps, attention loss
 </p>
+</div>
+<p>The degradation of performance as a result of adding the entropy loss term was surprisingly sudden: using a barely noticeable regularization coefficient of 0.001, performance was not affected. At 0.005, the regularization was fully appreciable (see videos below), with barely an impact on performance. With coefficients of 0.01 and higher, however, the model was completely unable to learn in almost all runs.</p>
 <figure class="video_container">
-<video controls="true" allowfullscreen="true", width="350"> <source src="images/a2_no_attn_loss.mp4" type="video/webm"> </video> <video controls="true" allowfullscreen="true", width="350"> <source src="images/a2_attn_loss.mp4" type="video/webm"> </video>
+&lt;video controls=“true” allowfullscreen=“true”, width=“350”&gt; <source src="images/a2_no_attn_loss.mp4" type="video/webm"> </video> &lt;video controls=“true” allowfullscreen=“true”, width=“350”&gt; <source src="images/a2_attn_loss.mp4" type="video/webm"> </video>
 </figure>
-<h3 id="beyond-heatmaps">Beyond Heatmaps</h3>
-<p>While we were doing this we also started to think about ways in which we could better visualise the structure of the RL agent.</p>
-<p>The argument for the importance of our work requires the following:</p>
-<ol style="list-style-type: decimal">
-<li><p>We can create datastructures representing trained models that have the capacity to be highly informative about the decision making process.</p></li>
-<li><p>The datastructures are not as informative as they could be because the weights that have been learned are not conducive to being understood in this way.</p></li>
-<li><p>We can find parameterisations of 'informativeness' in this context which allow us to apply regularisation and thus incentivise the models to act in a comprehensable way.</p></li>
-</ol>
-We started to use Simonyan gradient<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> to visualise the attention gradient and got results that were noisy and had few peaks. Using SmoothGrad and VarGrad gave us less noisy, more specific areas, but we found that the more samples we used, the more washed out the images became, until they hardly gave any information at all, suggesting that much of the apparent structure was due to noise.
+<h2 id="augmenting-visualization-of-attention-using-tree-structures">Augmenting visualization of attention using tree structures</h2>
+<p>Heatmaps are an excellent tool to visualize the relevance of individual pixels to the agent’s decision. But asking about the relevance of individual pixels rarely results in satisfying explanations.</p>
 <p align="center">
 <b> Simonyan Gradient (Left), Smoothgrad (Right) and Vargrad (Bottom) of the attention layer without entropy penalty. </b>
 </p>
 <figure class="video_container" , align="center">
 <video controls="true" allowfullscreen="true", width="350", align="left"> <source src="images/simonyan_no_attn.mp4" type="video/webm"> </video> <video controls="true" allowfullscreen="true", width="350", align="right"> <source src="images/coef_0.0_sum_smoothgrad_50.mp4" type="video/webm"> </video> <video controls="true" allowfullscreen="true", width="350", align="center"> <source src="images/coef_0.0_sum_vargrad_50.mp4" type="video/webm"> </video>
 </figure>
-<p>We wanted to find something that could capture more.</p>
-<p>We therefore started to experiment with creating more detailed structures in order to explain actions. Instead of simply taking the activation of the attention layer, we started to take the attention layer, take the most important activations, and then recursively take the most important activations of the layer below, to create a tree structure in which the components required for an action were collectively visualised.</p>
-<p>[Diagram of tree structure]</p>
-<p>To select the most important nodes we started using k-means clustering on each layer with the intention of using a gap-statistic to decide on the number of clusters that we should select. Unfortunately this turned out to be too slow for a goal of making an interactive visualisation tool and so we switched to using a peak detection algorithm to select which neurons to dig down into. This is then plotted on top of the stack of input frames.</p>
-<p>[Squares on a breakout frame]</p>
-<p>This is now being transformed into a Javascript program to allow users to explore the way a trained model plays a game in interactive 3D, selecting the filters that they want to explore and seeing the most relevant nodes drawn out.</p>
+<p>Visualizations of the filters learned by the convolutional layers of the network suggest that lower layers detect the presence (or absence) of particular game entities, such as a paddle or a ball, while higher layers encode spatial relationships between those entities. Therefore, the presence of certain spatial relationships between game entities informs the decision-making.</p>
+<p>We propose that two-dimensional heatmaps can be replaced with interactive, three-dimensional visualizations that present such spatial relationships in a manner analogous to Bach et al.’s layer-wise relevance propagation (LRP) approach. Beginning with the attention layer, we select the <em>n</em> strongest activations, and then recursively find the <em>n</em> strongest contribution activations in the layers below. This results in a tree structure, a visualization of which can show not only where the presence (or absence) of specific game entities is most relevant, but also which spatial relationships between them most contributed to the selected action.</p>
+<p>In practice, it can be challenging to select the most important elements in each layer based on their activations, since neighbouring neurons in convolutional layers share very similar inputs, and we are interested in prominent peaks, not absolute peaks, in activation strength. Our initial choice of k-means clustering to accomplish this proved too slow for interactive visualizations, so we switched to a peak detection algorithm to find neurons of interest. The final tree is plotted on top of the stack of input frames.</p>
 <div class="footnotes">
 <hr />
 <ol>
-<li id="fn1"><p>Zhao Yang et al. <a href="https://arxiv.org/pdf/1812.11276.pdf">Learn to Interpret Atari Agents</a><a href="#fnref1">↩</a></p></li>
-<li id="fn2"><p>Simonyan et al. <a href="https://arxiv.org/abs/1312.6034.pdf">Deep Inside Convolutional Networks: Visualising Image Classification Models and Saliency Maps</a><a href="#fnref2">↩</a></p></li>
+<li id="fn1">
+<p>
+Zhao Yang et al. <a href="https://arxiv.org/pdf/1812.11276.pdf">Learn to Interpret Atari Agents</a><a href="#fnref1">↩︎</a>
+</p>
+</li>
+<li id="fn2">
+<p>
+Simonyan et al. <a href="https://arxiv.org/abs/1312.6034.pdf">Deep Inside Convolutional Networks: Visualising Image Classification Models and Saliency Maps</a><a href="#fnref2">↩︎</a>
+</p>
+</li>
 </ol>
 </div>
 </body>
 </html>
-
