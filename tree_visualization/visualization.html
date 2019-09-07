@@ -7,19 +7,24 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
     <title>Attention Visualization</title>
-    
-    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <script src="https://d3js.org/d3.v5.min.js"></script> 
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
   </head>
   <body>
+      <div class="container">
+          <div class="row text-center">
+              <div class="col-lg-5 game-container">
+              </div>
+              <div class="col-lg-7 align-self-center graph-container">
+              </div>
+          </div>
+      </div>
     <script type="text/javascript"> 
-    //  TODO Fix bug that graph is not updated when a new screen is loaded
-
-    // Data
-    d3.json("screens.json").then(function(screens) {
-        d3.json("trees.json").then(function(trees) {
+    d3.json("https://raw.githubusercontent.com/dniku/rl-attention/master/tree_visualization/screens.json").then(function(screens) {
+        d3.json("https://raw.githubusercontent.com/dniku/rl-attention/master/tree_visualization/trees.json").then(function(trees) {
 
             var screen = 0,
                 n_screens = screens.length;
@@ -30,7 +35,7 @@
                 width = 84 * scale,
                 height = 84 * scale;
 
-            const svgGame = d3.select("body")
+            const svgGame = d3.select(".game-container")
                 .append("svg")
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom)
@@ -60,13 +65,13 @@
             var width = 600,
                 dx = 15,
                 dy = width / 6,
-                margin = ({top: 10, right: 70, bottom: 10, left: 50});
+                margin = ({top: 10, right: 20, bottom: 10, left: 40});
 
-            const svg = d3.selectAll("body")
+            const svg = d3.selectAll(".graph-container")
                 .append("svg")
                 .attr("width", width)
                 .attr("height", dx)
-                .attr("viewBox", [-margin.left, -margin.top, width + margin.right, dx])
+                // .attr("viewBox", [-margin.left, -margin.top, width + margin.right, dx])
                 .style("font", "14px sans-serif")
                 .style("user-select", "none");
 
@@ -106,20 +111,20 @@
                 root = d3.hierarchy(data);
 
                 root.x0 = dy / 2;
-                root.y0 = 0;
+                root.y0 = 200;
                 root.descendants().forEach((d, i) => {
                     d.id = i;
                     d._children = d.children;
                     // d.children = null;  // Uncomment to start with collapsed tree
                 });
 
-                update(root);
+                updateTree(root, screen_change=true);
             };
 
 
             // Update tree diagram and attention map
-            function update(source) {
-                
+            function updateTree(source) {
+
                 // Collapsible tree diagram (based on https://observablehq.com/@d3/collapsible-tree)
                 const duration = d3.event && d3.event.altKey ? 2500 : 250;
                 const nodes = root.descendants().reverse();
@@ -143,6 +148,10 @@
                     .attr("viewBox", [-margin.left, left.x - margin.top, width + margin.right, height])
                     .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
 
+                if (screen_change) {
+                    gNode.selectAll("g").remove();
+                };
+
                 // Update the nodes
                 const node = gNode.selectAll("g")
                     .data(nodes, d => d.id);
@@ -154,7 +163,7 @@
                     .attr("stroke-opacity", 0)
                     .on("click", d => {
                         d.children = d.children ? null : d._children;
-                        update(d);
+                        updateTree(d, screen_change=false);
                     });
 
                 nodeEnter.append("circle")
@@ -163,8 +172,8 @@
 
                 nodeEnter.append("text")
                     .attr("dy", "0.31em")
-                    .attr("x", d => d._children ? -7 : 7)
-                    .attr("text-anchor", d => d._children ? "end" : "start")
+                    .attr("x", d => d._children ? -7 : -7)
+                    .attr("text-anchor", d => d._children ? "end" : "end")
                     .text(d => d.data.name);
 
                 // Transition nodes to their new position
@@ -215,6 +224,7 @@
                     size = d.data['square'][2] * scale;
                     y = d.data['square'][0] * scale- size/2;
                     x = d.data['square'][1] * scale - size/2;
+                    name = d.data.name;
 
                     var squareColor = d.data['color'];
 
@@ -226,12 +236,15 @@
                         .attr("fill", squareColor)
                         .attr("fill-opacity", 0.02)
                         .attr("stroke", squareColor)
-                        .attr("stroke-opacity", 0.5);
+                        .attr("stroke-opacity", 0.5)
+                        .attr("name", name);
 
-                    
+                    square.append("title")
+                        .text(name);
+
                     square
                         .on("mouseover", function(d) {
-                            d3.select(this)
+                            test = d3.select(this)
                                 .transition()
                                 .duration(100)
                                 .style("fill-opacity", 0.2)
@@ -249,10 +262,8 @@
             };
 
             updateScreen();
-
         });
     });
-
     </script>
   </body>
 </html>
