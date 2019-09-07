@@ -126,7 +126,7 @@
             function updateTree(source) {
 
                 // Collapsible tree diagram (based on https://observablehq.com/@d3/collapsible-tree)
-                const duration = d3.event && d3.event.altKey ? 2500 : 250;
+                const duration = d3.event && d3.event.altKey ? 250 : 250;
                 const nodes = root.descendants().reverse();
                 const links = root.links();
 
