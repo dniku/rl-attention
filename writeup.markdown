@@ -20,22 +20,22 @@ failures later. In order to diagnose such problems effectively, the developer
 needs to understand how information flows through the artificial neural network
 that powers the agent's decision-making process.
 
-To date, most of the research on this topic has focused on image classification
-tasks instead of RL. As a result, most proposed methods output a heatmap
-highlighting those pixels of the input image that are most responsible for the
-inferred label. For instance, given a photograph of a dog in a meadow that was
-correctly classfied as "dog", a visualization of those pixels the network
-considers most dog-like provides a check on whether the network has truly
-learned the concept of dogs, or whether it merely made a lucky guess based on
-the presence of the meadow.
+One approach to understanding complex models operating on image inputs is
+through saliency maps. A saliency map is a heatmap highlighting those pixels of
+the input image that are most responsible for the model output. An example could
+be a neural network performing an image classification task: given a photograph
+of a dog in a meadow that was correctly classfied as "dog", a visualization of
+those pixels the network considers most dog-like provides a check on whether the
+network has truly learned the concept of dogs, or whether it merely made a lucky
+guess based on the presence of the meadow.
 
-To some extent, such methods can be repurposed for the analysis of RL agents
-playing video games, since the RL infers actions (labels) from images (render
-frames). However, the resulting heatmaps are often blurry or noisy. Furthermore,
-image classifiers simply detect objects, while RL agents must choose actions
-based on complex relationships between entities detected in the input. A simple
-heatmap visualization cannot convey whether and where such relationships were
-detected.
+To some extent, the methods for generating saliency maps can be repurposed for
+the analysis of RL agents playing video games, since the RL infers actions
+(labels) from images (render frames). However, the resulting heatmaps are often
+blurry or noisy. Furthermore, image classifiers simply detect objects, while RL
+agents must choose actions based on complex relationships between entities
+detected in the input. A simple heatmap visualization cannot convey whether and
+where such relationships were detected.
 
 In this paper, we present two potential improvements to existing visualization
 approaches in RL, and report on our experimental findings regarding their
@@ -43,16 +43,17 @@ performance on the Atari Breakout game.
 
 ## Attention in RL agents
 
-In 2016, Zhao et al. explored the effects of adding two *attention layers* to
-the decision-making network of an agent learning to play Breakout and other
-games. The attention layers, applied after some convolutional layers which
-detect basic game entities, restrict the input to the agent's action selection
-mechanism to a subset of the input pixels (the *attention mask*). In effect, the
-agent's model is forced to focus spatially. Adding such a bottleneck can improve
-training times, but more importantly, the attention layer activations provide a
-direct clue about what the model is focusing on. This directness is attractive
-when compared to *post-hoc* methods, which require additional computation to
-reason about the relevance of network activations after inference.
+In 2016, [Yang et al.](https://arxiv.org/abs/1812.11276) explored the effects of
+adding two *attention layers* to the decision-making network of an agent
+learning to play Breakout and other games. The attention layers, applied after
+some convolutional layers which detect basic game entities, restrict the input
+to the agent's action selection mechanism to a subset of the input pixels (the
+*attention mask*). In effect, the agent's model is forced to focus spatially.
+Adding such a bottleneck can improve sample efficiency, but more importantly,
+the attention layer activations provide a direct clue about what the model is
+focusing on. This directness is attractive when compared to *post-hoc* methods,
+which require additional computation to reason about the relevance of network
+activations after inference.
 
 <p><img src="images/architecture.png" class="archi" alt="Diagram of the architecture used in our models." width="600"/></p>
 
@@ -63,26 +64,42 @@ generate a heatmap by backpropagating the attention tensor through the network.
 Several different approaches exist to accomplish this, from Simonyan et al.'s
 gradient method to the more recent VarGrad and SmoothGrad sampling methods.
 
-Zhao et al. used the former, a basic gradient method, to visualize the attention
-mask corresponding to their agent's attention layer activations. Their findings
-confirm that in trained agents, the attention tends to be strong near crucial
-entities in the game, i.e. the Pacman sprite or the moving ball in Breakout.
-However, the attention mask heatmaps are noisy and not very informative.
+After some experimentation, Yang et al. chose a simpler approach, where they
+simply visualized the receptive field of the neuron which corresponded to the
+strongest activation in their agent's attention layer. Their findings confirm
+that in trained agents, the attention tends to be strong near crucial entities
+in the game, i.e. the Pacman sprite or the moving ball in Breakout. However, the
+attention mask heatmaps are fairly crude.
 
 ## Adding regularization to sharpen the attention masks
 
 The effectiveness of attention layers depends crucially on how the attention is
 constrained. This is especially true because of the downsampling action of the
-convolutional layers in Zhao et al.'s architecture: a diffuse attention tensor
+convolutional layers in Yang et al.'s architecture: a diffuse attention tensor
 will effectively correspond to all input pixels, defeating the purpose of the
 attention layer.
 
-To incentivize more informative heatmaps than those obtained by Zhao et al., we
+To incentivize more informative heatmaps than those obtained by Yang et al., we
 added an extra loss term to represent the diffuseness of the attention tensor.
 Several such measures exist; we settled on using the entropy of the final
 attention layer.
 
-\[explanation of the math\]
+For a discrete probability distribution \\(p\_i, i=1..n\\) entropy is defined as
+follows:
+
+\\\[ \\operatorname{entropy}(p) = -\\sum\_{i = 1}^n p\_i \\cdot \\log(p\_i).
+\\\]
+
+This quantity is greatest when \\(p\_i \\equiv \\frac 1 n\\) for all \\(i\\),
+i.e., when the corresponding probability distribution is very evenly spread. By
+contrast, it is equal to zero when \\(p\_i = 1\\) for some \\(i\\), while the
+other outcomes have probability zero.
+
+In our case, we regard the output of the attention layer as a probability
+distribution, and we modify the loss in such way as to minimize the entropy of
+this distribution. Specifically, we add \\(\\lambda \\cdot
+\\operatorname{entropy}(attn)\\) to the loss, where \\(\\lambda\\) is a
+non-negative coefficient and \\(attn\\) is the output of the attention layer.
 
 Although attention mechanisms have been shown to improve training times,
 excessively strong regularization will naturally prevent the agent from taking
@@ -92,26 +109,42 @@ entropy regularization on the agent's performance at playing Breakout.
 
 ### Experimental Results
 
-We recreated the agent by Zhao et al. in TensorFlow using the `stable-baselines`
-package, a fork of OpenAI's `baselines` package with improved code style and
-documentation. Since `stable-baselines` does not include all features of the
-Rainbow training architecture, we used PPO as a state-of-the-art algorithm
-available in the library.
+We recreated the agent by Yang et al. in TensorFlow using the `stable-baselines`
+package, a fork of OpenAI's `baselines` package with a stable programming
+interface and improved documentation. Since `stable-baselines` does not include
+a full implementation of the Rainbow algorithm, we used PPO as another
+state-of-the-art algorithm available in the library.
 
-Our initial experiments found that adding the attention layers to the baseline
-architecture made no noticeable change in its performance.
+Our experiments show that entropy regularization can be added in such way that
+its effects on attention maps become pronounced, but performance does not suffer
+much. The following figure shows average reward agents obtain during training
+with varying coefficient before entropy loss. `0` means that entropy loss did
+not affect training and should be regarded as baseline.
 
 <div class="figure">
-<img src="images/scatter.png" alt="Scatter plot of score at 10M steps, attention loss" class="center"/>
-<p class="caption">Scatter plot of score at 10M steps, attention loss</p>
+<img src="images/reward_curves.png" alt="Average reward during training" class="center"/>
+<p class="caption">Average reward during training</p>
 </div>
 
-The degradation of performance as a result of adding the entropy loss term was
-surprisingly sudden: using a barely noticeable regularization coefficient of
-0.001, performance was not affected. At 0.005, the regularization was fully
-appreciable (see videos below), with barely an impact on performance. With
-coefficients of 0.01 and higher, however, the model was completely unable to
-learn in almost all runs.
+From the data it is clear that $$\\lambda$$ equal to 0.0005 does not lead to any
+drop in performance. The following figure shows impact on the resulting entropy
+value.
+
+<div class="figure">
+<img src="images/scatterplots.png" alt="Scatterplot of final performance. X-axis: attention entropy. Y-axis: average reward." class="center"/>
+<p class="caption">Scatterplot of final performance. X-axis: attention entropy. Y-axis: average reward. Solid circles denote individual runs with various random seeds. Cross marks denote averages across runs.</p>
+</div>
+
+With the exception for BeamRider, it is clear that for the particular case of
+these Atari games, it is possible to choose a value of $$\\lambda$$ such that
+the extra term in the loss will have a noticeable effect on entropy value, while
+final performance will not suffer.
+
+BeamRider is different because for these particular training runs, none of the
+agents achieved good performance. This is expected: in the original PPO paper
+([Schulman et al., 2017](https://arxiv.org/abs/1707.06347)) is reported to only
+start learning after roughly 10M frames (we terminate training after exactly 10M
+frames).
 
 <figure class="video_container">
 <video controls="true" allowfullscreen="true", width="350"> <source src="images/a2_no_attn_loss.mp4" type="video/webm"> </video> <video controls="true" allowfullscreen="true", width="350"> <source src="images/a2_attn_loss.mp4" type="video/webm"> </video>
