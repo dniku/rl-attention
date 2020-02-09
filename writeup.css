@@ -76,11 +76,14 @@ dd{margin-left:2em;margin-bottom:1em;}
   display: block;
   margin-left: auto;
   margin-right: auto;
-  width: 50%;
+  width: 80%;
 }
 .archi {
   display: block;
   margin-left: auto;
   margin-right: auto;
   width: 90%;
+}
+.caption {
+  text-align: center;
 }

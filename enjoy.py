@@ -21,7 +21,7 @@ from visualization import VideoWriter, render_attn
 def main(cfg, model_path, video_path, visualization_method, n_gradient_samples, obs_style):
     set_global_seeds(cfg['eval_seed'])
 
-    env = make_atari_env(cfg['env_name'], num_env=9, seed=cfg['eval_seed'])
+    env = make_atari_env(cfg['env_name'], num_env=1, seed=cfg['eval_seed'])
     env = VecFrameStack(env, n_stack=4)  # stack 4 frames
     if cfg['normalize']:
         # Not setting training=False because that seems to ruin performance
@@ -94,7 +94,7 @@ def main(cfg, model_path, video_path, visualization_method, n_gradient_samples, 
         smap /= saliency_cutoff
         np.clip(smap, a_min=0, a_max=1, out=smap)
 
-    with VideoWriter(video_path) as writer:
+    with VideoWriter(video_path, fps=10) as writer:
         for obs, smap in tqdm(zip(observations, saliency_maps), postfix='writing video', total=len(observations), ncols=76):
             if obs_style == 'human':
                 b, h, w = obs.shape[:-1]
@@ -107,6 +107,7 @@ def main(cfg, model_path, video_path, visualization_method, n_gradient_samples, 
                     smap,
                     obs.astype(np.float32)  # / 255
                 ], axis=-1)
+                frame = resize(frame, (1, 160, 160, 3))
             writer.write_frame(frame)
 
 

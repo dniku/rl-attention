@@ -37,7 +37,7 @@ agents must choose actions based on complex relationships between entities
 detected in the input. A simple heatmap visualization cannot convey whether and
 where such relationships were detected.
 
-In this paper, we present two potential improvements to existing visualization
+In this work, we present two potential improvements to existing visualization
 approaches in RL, and report on our experimental findings regarding their
 performance on the Atari Breakout game.
 
@@ -126,7 +126,7 @@ not affect training and should be regarded as baseline.
 <p class="caption">Average reward during training</p>
 </div>
 
-From the data it is clear that $$\\lambda$$ equal to 0.0005 does not lead to any
+From the data it is clear that \\(\\lambda\\) equal to 0.0005 does not lead to any
 drop in performance. The following figure shows impact on the resulting entropy
 value.
 
@@ -136,18 +136,36 @@ value.
 </div>
 
 With the exception for BeamRider, it is clear that for the particular case of
-these Atari games, it is possible to choose a value of $$\\lambda$$ such that
+these Atari games, it is possible to choose a value of \\(\\lambda\\) such that
 the extra term in the loss will have a noticeable effect on entropy value, while
 final performance will not suffer.
 
 BeamRider is different because for these particular training runs, none of the
 agents achieved good performance. This is expected: in the original PPO paper
-([Schulman et al., 2017](https://arxiv.org/abs/1707.06347)) is reported to only
-start learning after roughly 10M frames (we terminate training after exactly 10M
+([Schulman et al., 2017](https://arxiv.org/abs/1707.06347)) it is reported that learning only starts after roughly 10M frames (we terminate training after exactly 10M
 frames).
 
+The following videos show what learned attention maps look like with different \\(\\lambda\\).
+
 <figure class="video_container">
-<video controls="true" allowfullscreen="true", width="350"> <source src="images/a2_no_attn_loss.mp4" type="video/webm"> </video> <video controls="true" allowfullscreen="true", width="350"> <source src="images/a2_attn_loss.mp4" type="video/webm"> </video>
+<video controls="true" allowfullscreen="true", width="700", align="center">
+    <source src="videos/BeamRider.mp4" type="video/webm">
+</video>
+<video controls="true" allowfullscreen="true", width="700", align="center">
+    <source src="videos/Breakout.mp4" type="video/webm">
+</video>
+<video controls="true" allowfullscreen="true", width="700", align="center">
+    <source src="videos/MsPacman.mp4" type="video/webm">
+</video>
+<video controls="true" allowfullscreen="true", width="700", align="center">
+    <source src="videos/Frostbite.mp4" type="video/webm">
+</video>
+<video controls="true" allowfullscreen="true", width="700", align="center">
+    <source src="videos/Enduro.mp4" type="video/webm">
+</video>
+<video controls="true" allowfullscreen="true", width="700", align="center">
+    <source src="videos/Seaquest.mp4" type="video/webm">
+</video>
 </figure>
 
 ## Augmenting visualization of attention using tree structures
@@ -160,7 +178,14 @@ rarely results in satisfying explanations.
 <b> Simonyan Gradient (Left), Smoothgrad (Right) and Vargrad (Bottom) of the attention layer without entropy penalty. </b>
 </p>
 <figure class="video_container" , align="center">
-<video controls="true" allowfullscreen="true", width="350", align="left"> <source src="images/simonyan_no_attn.mp4" type="video/webm"> </video> <video controls="true" allowfullscreen="true", width="350", align="right"> <source src="images/coef_0.0_sum_smoothgrad_50.mp4" type="video/webm"> </video> <video controls="true" allowfullscreen="true", width="350", align="center"> <source src="images/coef_0.0_sum_vargrad_50.mp4" type="video/webm"> </video>
+<video controls="true" allowfullscreen="true", width="350", align="left">
+    <source src="images/simonyan_no_attn.mp4" type="video/webm">
+</video>
+<video controls="true" allowfullscreen="true", width="350", align="right">
+    <source src="images/coef_0.0_sum_smoothgrad_50.mp4" type="video/webm">
+</video>
+<video controls="true" allowfullscreen="true", width="350", align="center">
+    <source src="images/coef_0.0_sum_vargrad_50.mp4" type="video/webm"> </video>
 </figure>
 
 Visualizations of the filters learned by the convolutional layers of the network
