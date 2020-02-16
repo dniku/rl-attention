@@ -68,7 +68,7 @@ dt{font-weight:bold;margin-left:1em;}
 dd{margin-left:2em;margin-bottom:1em;}
 @media screen and (min-width: 768px) {
     body {
-        width: 748px;
+        width: 800px;
         margin:10px auto;
     }
 }
@@ -76,7 +76,7 @@ dd{margin-left:2em;margin-bottom:1em;}
   display: block;
   margin-left: auto;
   margin-right: auto;
-  width: 80%;
+  width: 100%;
 }
 .archi {
   display: block;
